@@ -1,0 +1,57 @@
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script type="text/javascript" >
+function trim(value) {
+        return value.replace(/^\s+|\s+$/gm,'');
+}
+
+function removeClassName (elem, className) {
+	elem.className = elem.className.replace(className, "").trim();
+}
+
+function addCSSClass (elem, className) {
+	removeClassName (elem, className);
+	elem.className = (elem.className + " " + className).trim();
+}
+
+function fixScrolling(elem) {
+        var objDiv = document.getElementById(elem); 
+        objDiv.scrollTop = objDiv.scrollHeight;
+ }
+
+ function saveConfig() {
+     var url = window.location.protocol + "//" + window.location.host + window.location.pathname + "?save=config";
+     window.location = url; 
+ }
+ 
+ function saveData(key) {
+     var new_value = document.getElementById(key).textContent;
+     var url = window.location.protocol + "//" + window.location.host + window.location.pathname + "?updated_key=" + key + "&updated_value=" + new_value;
+     window.location = url;
+ }
+
+function stripedTable() {
+	if (document.getElementById && document.getElementsByTagName) {  
+		var allTables = document.getElementsByTagName('table');
+		if (!allTables) { return; }
+
+		for (var i = 0; i < allTables.length; i++) {
+			if (allTables[i].className.match(/[\w\s ]*scrollTable[\w\s ]*/)) {
+				var trs = allTables[i].getElementsByTagName("tr");
+				for (var j = 0; j < trs.length; j++) {
+					removeClassName(trs[j], 'alternateRow');
+					addCSSClass(trs[j], 'normalRow');
+				}
+				for (var k = 0; k < trs.length; k += 2) {
+					removeClassName(trs[k], 'normalRow');
+					addCSSClass(trs[k], 'alternateRow');
+				}
+			}
+		}
+	}
+}
+
+window.onload = function() { 
+    stripedTable(); 
+    fixScrolling("tableContainer");
+};
+</script>
