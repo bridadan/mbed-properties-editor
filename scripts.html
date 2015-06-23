@@ -18,14 +18,14 @@ function fixScrolling(elem) {
         objDiv.scrollTop = objDiv.scrollHeight;
  }
 
- function saveConfig() {
-     var url = window.location.protocol + "//" + window.location.host + window.location.pathname + "?save=config";
+ function saveConfig(key) {
+     var url = window.location.protocol + "//" + window.location.host + window.location.pathname + "?save=" + key;
      window.location = url; 
  }
  
- function saveData(key) {
+ function saveData(key,file) {
      var new_value = document.getElementById(key).textContent;
-     var url = window.location.protocol + "//" + window.location.host + window.location.pathname + "?updated_key=" + key + "&updated_value=" + new_value;
+     var url = window.location.protocol + "//" + window.location.host + window.location.pathname + "?updated_key=" + key + "&updated_value=" + new_value + "&file=" + file;
      window.location = url;
  }
 
