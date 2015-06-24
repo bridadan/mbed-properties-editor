@@ -1,0 +1,169 @@
+#
+## Copyright (C) 2011-2015 ARM Limited. All rights reserved.
+#
+
+### MBED DEVICE SERVER CONFIGURATIONS
+
+## RESOURCE DIRECTORY
+## comma separated list with domains, first entry is a default domain
+#directory.domains=domain,domain2
+## time in minutes that endpoint is kept in stale state, before removing (default: 0 minutes)
+#directory.stale-ttl-min=60
+## default value for the registration lifetime parameter in seconds
+#directory.registration-lifetime=3600
+## during registration, validates client certificate Common Name (CN)
+##  against registration data (in edtls mode only when using certificates)
+#directory.validate-name-with-certificate-cn=false
+#directory.validate-domain-with-certificate-cn=false
+## for every registration, check if current IP address was already used by other endpoint name,
+## can be set to false if mesh network does not allow address swapping between endpoints
+#directory.address-duplicate-check=false
+## Interval for triggering check of registration lifetime expiration (in seconds)
+#directory.registration-expiration-check-interval=60
+## Enables GET request on /rd from client devices (CoAP)
+#directory.enable-get-from-coap=false
+
+## EVENTING
+## Time to expire (in seconds) of single event element when waiting for successful delivery.
+#event.time-to-expire=30
+## Time duration (in minutes), after first delivery failure, for delivery retries. After it, client's URL will be removed.
+## Default: 60 minutes
+#event.time-for-delivery-retries=60
+## Delay time between delivery retries (in seconds).
+#event.retry-delay=120
+## Limit of dequeuing TPS for subscriptions, 0 means no limit
+#event.dequeue-limit.subscription=0
+
+## DEVICE SERVER KEYSTORE
+#keystore.filename=deviceserver.jks
+#keystore.type=JKS
+#keystore.password=secret
+#keystore.alias.admin=deviceserver
+#keystore.alias.rest=deviceserver
+#keystore.alias.m2m-http=deviceserver
+#keystore.alias.edtls=edtls
+#keystore.alias.root=ca
+## comma separated list of aliases for trusted certificates
+#keystore.alias.trusted=
+
+## Thread pool size for HTTP servers
+#threadpool.min = 8
+#threadpool.max = 200
+
+## ADMIN WEB INTERFACE
+#admin-ui.enabled = true
+#admin-ui.bind-address=0.0.0.0
+#admin-ui.port=8081
+#admin-ui.password=admin
+## Comma separated list of enabled secure protocols (TLSv1.2/TLSv1.1/TLSv1/SSLv3)
+#admin-ui.protocol=TLSv1.2,TLSv1.1,TLSv1
+
+## REST INTERFACE
+#rest.bind-address=0.0.0.0
+#rest.port=8080
+#rest.pull-timeout=30
+## parameters for HTTP SSL REST
+#rest.https-enable=false
+## Comma separated list of enabled protocols (TLSv1.2/TLSv1.1/TLSv1/SSLv3)
+#rest.https-protocol=TLSv1.2,TLSv1.1,TLSv1
+## Used security protocol when sending push url notifications 
+## to clients secure socket (TLSv1.2, TLSv1.1, TLSv1 or SSLv3)
+#rest.push.https-protocol=TLSv1.2
+## third party authenticator url, that will be use for authentication every rest call (example: http://127.0.0.1:1234/auth)
+#rest.authenticator-url=
+
+## M2M HTTP INTERFACE
+#m2m-http.enable=false
+#m2m-http.bind-address=0.0.0.0
+#m2m-http.port=9000
+#m2m-http.user=endpoint
+#m2m-http.password=endpoint
+#m2m-http.secure=true
+
+## COAP INTERFACE
+#coap.address=0.0.0.0
+#coap.block-size=1024
+#coap.buffer-size=2048
+## request timeout, default: 2000 ms.
+#coap.request-timeout=2000
+## maximum number of retransmissions, default: 4
+#coap.max-retransmissions=4
+## socket buffer size
+#coap.socket-buffer-size=-1
+#coap.default-maxage=60
+
+## COAP THREAD POOL
+#coap.executor.threads-min=24
+#coap.executor.threads-max=24
+#coap.executor.keep-alive-sec=120
+#coap.executor.queue-max-size=1000
+
+## COAP.UDP
+## enables UDP transport for CoAP (unencrypted)
+#coap.udp=true
+#coap.udp.port=5683
+
+## COAP.TCP
+## enables TCP transport for CoAP
+#coap.tcp=false
+## TCP port (default=5683)
+#coap.tcp.port=5683
+## Defines how long messages can be sent/received from TCP connection in bytes
+#coap.tcp.max-message-size=1024
+## Defines timeout (in seconds) for idle connections, after witch the socket will be closed.
+## To disable, use value 0 (zero).
+#coap.tcp.idle-timeout=0
+
+## COAP.TCP.TLS
+## enables TCP TLS transport for CoAP
+#coap.tls=false
+#coap.tls.port=5684
+#coap.tls.protocol=TLSv1.2
+## Defines how long messages can be sent/received from TLS connection in bytes
+#coap.tls.max-message-size=1024
+
+## COAP.TCP.TLS (POLARSSL)
+## enables TCP TLS transport for CoAP using PolarSsl library
+#coap.polarssl=false
+#coap.polarssl.port=5684
+
+## COAP.EDTLS
+## Enables EDTLS transport for CoAP
+#coap.edtls=false
+#coap.edtls.port=5684
+#coap.edtls.cert.verify-signature=true
+
+## Statistics related parameters
+#statistics.period=0
+#statistics.handlers=
+
+## SMS trigger parameters
+#sms.trigger=false
+## Period (in seconds) between two SMS trigger to the same SMS number
+#sms.trigger.timespan=60
+#sms.trigger.payload=update_trigger
+#sms.trigger.deliveryReport=false
+## SMS validity time in hours.
+#sms.trigger.validity=72
+## Fully qualified name of the SmsGatewayPlugin class 
+#sms.plugin=com.arm.mbed.deviceserver.connector.sms.att.ATTSmsGatewayPlugin
+
+## AT&T SMS Gateway Plugin parameters
+#sms.plugin.att.fqdn=https://api.att.com
+#sms.plugin.att.proxy.bind-address=
+#sms.plugin.att.proxy.port=8080
+#sms.plugin.att.auth.id=
+#sms.plugin.att.auth.secret=
+## Parameters for the AT&T SMS delivery report handler, started when deliveryReport enabled
+#sms.plugin.att.statusListener.bind-address=0.0.0.0
+#sms.plugin.att.statusListener.port=8180
+#sms.plugin.att.statusListener.threads.min=4
+#sms.plugin.att.statusListener.threads.max=25
+## Set keystore parameters to start delivery report handler in secure mode
+#sms.plugin.att.statusListener.keystore.file=
+#sms.plugin.att.statusListener.keystore.password=
+#sms.plugin.att.statusListener.keystore.alias=
+
+#mDS Configuration Updates
+#Wed Jun 24 09:31:16 CDT 2015
+m2m-http.password=endpoint3
