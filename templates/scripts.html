@@ -18,6 +18,15 @@ function fixScrolling(elem) {
         objDiv.scrollTop = objDiv.scrollHeight;
  }
 
+ function restartMDS() {
+     var url = window.location.protocol + "//" + window.location.host + window.location.pathname + "?mds=restart";
+     window.location = url;
+ }
+
+ function restartMQTTGW() {     var url = window.location.protocol + "//" + window.location.host + window.location.pathname + "?mqttgw=restart";
+     window.location = url;
+ }
+
  function saveData(key,file) {
      var new_value = document.getElementById(key).textContent;
      var new_key = document.getElementById(key+"-key").textContent;

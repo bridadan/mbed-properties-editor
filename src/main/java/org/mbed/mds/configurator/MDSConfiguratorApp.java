@@ -30,6 +30,7 @@ public class MDSConfiguratorApp
         private static String m_div_hide = "div#__NAME__ { display: none; }"; // DIV hide directive template
         
         private static String m_title = "mbed Device Server Configuration";   // Title
+        public  static int    m_port = 8234;                                  // default port we listen on... TCP
         
         private static String m_scripts_root = "./scripts/";                  // directory relative to jar file for scripts...
         private static String m_config_files_root = "/conf/";                 // directory relative to jar file for config files...
@@ -450,6 +451,18 @@ public class MDSConfiguratorApp
                 }
             }
             
+            // restart mDS
+            if (query.get("mds") != null) {
+                System.out.println("Restarting mbed Device Server...");
+                this.executeScript("restartMDS.sh");
+            }
+            
+            // restart MQTT GW
+            if (query.get("mqttgw") != null) {
+                System.out.println("Restarting mbed MQTT Gateway...");
+                this.executeScript("restartMQTTGW.sh");
+            }
+            
             // initialize the response
             html = this.initializeResponse(html);
 
@@ -474,7 +487,7 @@ public class MDSConfiguratorApp
     }
     
     public static void main(String[] args) throws Exception {
-        HttpServer server = HttpServer.create(new InetSocketAddress(8234), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress(MDSConfigurator.m_port), 0);
         server.createContext("/", new MDSConfigurator());
         server.setExecutor(null);
         server.start();
