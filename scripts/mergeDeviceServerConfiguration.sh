@@ -1,14 +1,18 @@
 #!/bin/sh
 
-cd conf
+do_merge() 
+{
+    cd conf
+    /bin/rm -f deviceserver.properties.new 2>&1 1>/dev/null
+    cat deviceserver.properties.DEFAULT > deviceserver.properties.new
+    cat deviceserver.properties.updated >> deviceserver.properties.new
+    /bin/rm -f deviceserver.properties.updated
+    cd ..
+}
 
-/bin/rm -f deviceserver.properties.new 2>&1 1>/dev/null
+main()
+{
+    do_merge $*
+}
 
-cat deviceserver.properties.DEFAULT > deviceserver.properties.new
-cat deviceserver.properties.updated >> deviceserver.properties.new
-
-/bin/rm -f deviceserver.properties.updated
-
-cd ..
-
-exit 0
+main $*

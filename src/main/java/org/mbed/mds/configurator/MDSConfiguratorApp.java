@@ -112,6 +112,7 @@ public class MDSConfiguratorApp
         private Properties getProperties(Properties prop,String filename) {
             try {
                 String fq_filename = this.getWorkingDirectory() + this.m_config_files_root + filename;
+                //System.out.println("Opening File: " + fq_filename);
                 InputStream input = new FileInputStream(fq_filename);
                 prop.clear();
                 prop.load(input);
@@ -313,6 +314,7 @@ public class MDSConfiguratorApp
         
         private void executeScript(String script) {
             try {
+                //System.out.println("Executing: " + this.m_scripts_root + script);
                 Runtime.getRuntime().exec(this.m_scripts_root + script);
             } catch (Exception ex) {
                 System.out.println("Exception caught: " + ex.getMessage() + " script: " + script);
