@@ -8,7 +8,6 @@ import java.net.InetSocketAddress;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
@@ -30,18 +29,22 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManagerFactory;
 
 /**
- * mDS Configurator
+ * MDSConfiguratorApp - this application displays configuration files from the mDS environment (as well as itself) to permit
+ * web-based customization of mDS and its sub-components (including the optional MQTT Gateway)
+ * 
+ * @author Doug Anson
  */
 public class MDSConfiguratorApp 
 {
-    static class MDSConfigurator implements HttpHandler {   
-        private static int m_num_tables = 4;                                  // max number of tables shown
+    /**
+     * MDSConfigurator - the primary class implementing MDSConfiguratorApp
+     */
+    static class MDSConfigurator extends BasicAuthenticator implements HttpHandler {   
+        private static String m_title = "mbed Device Server Configuration";   // Title
+        private static int m_num_tables = 6;                                  // max number of tables shown
         
         private static String m_div_hider_tag = "__HIDE_TABLE_";              // DIV hiding table tag
         private static String m_div_hide = "div#__NAME__ { display: none; }"; // DIV hide directive template
-        
-        private static String m_title = "mbed Device Server Configuration";   // Title
-        public  static int    m_port = 8234;                                  // default port we listen on... TCP
         
         private static String m_scripts_root = "./scripts/";                  // directory relative to jar file for scripts...
         private static String m_config_files_root = "/conf/";                 // directory relative to jar file for config files...
@@ -51,24 +54,31 @@ public class MDSConfiguratorApp
         private static String m_empty_slot_key = "unused";                    // empty slot key
         private static String m_empty_slot_value = "unused";                  // empty slot value
         
-        private final Properties m_mds_config_properties;
-        private final Properties m_mds_creds_properties;
-        private final Properties m_http_coap_media_types_properties;
-        private final Properties m_logging_properties;
-        private final Properties m_mqtt_gw_properties;
+        private final Properties m_mds_config_properties;                     // mDS Properties
+        private final Properties m_mds_creds_properties;                      // mDS Credential Properties
+        private final Properties m_http_coap_media_types_properties;          // HTTP CoAP Media Types Properties
+        private final Properties m_logging_properties;                        // Logging Properties
+        private final Properties m_mqtt_gw_properties;                        // MQTT Gateway Properties
+        private final Properties m_mds_config_properties_updated;             // mDS Updated Properties (deltas)
+        private final Properties m_configurator_properties;                   // mDSConfigurator App (self) properties
         
-        private final Properties m_mds_config_properties_updated;
-        
+        /**
+         * Default Constructor
+         */
         public MDSConfigurator() {
-            super();
+            super("get");
             this.m_mds_config_properties = new Properties();
             this.m_mds_creds_properties = new Properties();
             this.m_http_coap_media_types_properties = new Properties();
             this.m_logging_properties = new Properties();
             this.m_mqtt_gw_properties = new Properties();
             this.m_mds_config_properties_updated = new Properties();
+            this.m_configurator_properties = new Properties();
         }
         
+        /**
+         * read in file into a string
+         */
         private String fileToString(String filename)  {
             String contents = "";
             InputStream input = null;
@@ -92,6 +102,9 @@ public class MDSConfiguratorApp
             return null;
         }
         
+        /**
+         * initialize the HTTP response HTML content
+         */
         private String initializeResponse(String html) {
             // initialize the table with the CSS first
             html += this.fileToString("css.html");
@@ -99,27 +112,31 @@ public class MDSConfiguratorApp
             // add scripts
             html += this.fileToString("scripts.html");
             
-            // add the table template
+            // add the table templates/editor page
             html += this.fileToString("editor.html");
             
             // update some of the key variables
-            String dir = this.getWorkingDirectory();
             html = html.replace("__TITLE__",this.m_title);
             
             // return the html
             return html;
         }
-                
+        
+        /**
+         * Get the current working directory
+         */
         private String getWorkingDirectory() {
             try {
-                return new java.io.File( "." ).getCanonicalPath();
+                return new java.io.File(".").getCanonicalPath();
             }
             catch (Exception ex) {
             }
             return "./";
         }
         
-        // open the mDS properties
+        /**
+         * Open Properties and read in from properties file
+         */
         private Properties getProperties(Properties prop,String filename) {
             try {
                 String fq_filename = this.getWorkingDirectory() + this.m_config_files_root + filename;
@@ -135,7 +152,9 @@ public class MDSConfiguratorApp
             return prop;
         }
         
-        // build out the properties table
+        /**
+         * Build out the HTML table representing the properties file 
+         */
         private String createConfigTableAsHTML(Properties props,String file, boolean editable_key) {
             // start the table
             String table = "<table border=\"0\">";
@@ -169,10 +188,16 @@ public class MDSConfiguratorApp
             return table;
         }
         
+        /**
+         * Build out the configuration table (properties from a properties file) as HTML content
+         */
         private String buildConfigurationTable(String html,Properties props,String file,String key) { 
             return this.buildConfigurationTable(html, props, file, key, false);
         }
         
+        /**
+         * Build out the configuration table (properties from a properties file) as HTML content
+         */
         private String buildConfigurationTable(String html,Properties props,String file,String key,boolean editable_key) {            
             // create the actual configuration table has HTML
             String preference_table = this.createConfigTableAsHTML(props,file,editable_key);
@@ -184,7 +209,10 @@ public class MDSConfiguratorApp
             return html;
         }
         
-        public Map<String, String> queryToMap(String query){
+        /**
+         * convert the QueryString to a Map<>
+         */
+        private Map<String, String> queryToMap(String query){
             Map<String, String> result = new HashMap<String, String>();
             if (query != null && query.length() > 0) {
                 for (String param : query.split("&")) {
@@ -198,18 +226,27 @@ public class MDSConfiguratorApp
             }
             return result;
         }
-                
+        
+        /**
+         * Display the device server properties as HTML
+         */
         private String displayDeviceServerProperties(String html) {
             if (this.m_mds_config_properties.isEmpty()) this.getProperties(this.m_mds_config_properties,"deviceserver.properties");
             return this.buildConfigurationTable(html,this.m_mds_config_properties,"deviceserver.properties","__DS_CONFIG_TABLE__");
         }
         
+        /**
+         * Add some empty credential slots in the configuration table for adding new credential entries
+         */
         private void addEmptyCredentialSlots() {
             for(int i=0;i<this.m_extra_cred_slots;++i) {
                 this.m_mds_creds_properties.put(this.m_empty_slot_key + "-" + (i+1),this.m_empty_slot_value);
             }
         }
         
+        /**
+         * Display the credential properties as HTML
+         */
         private String displayDeviceServerCredentials(String html) {
             if (this.m_mds_creds_properties.isEmpty()) {
                 this.getProperties(this.m_mds_creds_properties,"credentials.properties");
@@ -218,22 +255,41 @@ public class MDSConfiguratorApp
             return this.buildConfigurationTable(html,this.m_mds_creds_properties,"credentials.properties","__DS_CREDS_TABLE__",true);
         }
         
+        /**
+         * Display the CoAP HTML Media Types properties as HTML
+         */
         private String displayCoAPMediaTypesConfig(String html) {
             if (this.m_http_coap_media_types_properties.isEmpty()) this.getProperties(this.m_http_coap_media_types_properties,"http-coap-mediatypes.properties");
             return this.buildConfigurationTable(html,this.m_http_coap_media_types_properties,"http-coap-mediatypes.properties","__COAP_MEDIA_TYPE_TABLE__");
         }
         
+        /**
+         * Display the Logging File properties as HTML
+         */
         private String displayLoggingConfig(String html) {
             if (this.m_logging_properties.isEmpty()) this.getProperties(this.m_logging_properties,"log4j.properties");
             return this.buildConfigurationTable(html,this.m_logging_properties,"log4j.properties","__LOGGING_CONFIG_TABLE__");
         }
         
+        /**
+         * Display the MQTT Gateway properties as HTML
+         */
         private String displayMQTTGWConfig(String html) {
             if (this.m_mqtt_gw_properties.isEmpty()) this.getProperties(this.m_mqtt_gw_properties,"gateway.properties");
             return this.buildConfigurationTable(html,this.m_mqtt_gw_properties,"gateway.properties","__MQTT_GW_CONFIG_TABLE__");
         }
         
-        // update mDS configuration
+        /**
+         * Display the mDSConfigurator App (self) properties as HTML
+         */
+        private String displayConfiguratorConfig(String html) {
+            if (this.m_configurator_properties.isEmpty()) this.getProperties(this.m_configurator_properties,"configurator.properties");
+            return this.buildConfigurationTable(html,this.m_configurator_properties,"configurator.properties","__CONFIGURATOR_CONFIG_TABLE__");
+        }
+        
+        /**
+         * Update the device server configuration (special handling since the default device server properties file is commented out)
+         */
         private void updateDeviceServerConfiguration(String key,String value,String file) {
             // DEBUG
             System.out.println("mDS Configuration: Updating " + key + " = " + value);
@@ -246,7 +302,9 @@ public class MDSConfiguratorApp
             this.saveDeviceServerConfigurationFile();
         }
         
-        // clear out empty slots
+        /**
+         * Clear out the non-used extra credential slots - don't try to store them...
+         */
         private void clearEmptyCredentialSlots() {
             Enumeration e = this.m_mds_creds_properties.propertyNames();
             while (e.hasMoreElements()) {
@@ -257,7 +315,9 @@ public class MDSConfiguratorApp
             }
         }
         
-        // update mDS credentials
+        /**
+         * Update the credentials properties file
+         */
         private void updateDeviceServerCredentials(String key,String value,String file, String new_key) {
             if (new_key != null && new_key.equals(key) == false) {
                 // DEBUG
@@ -287,7 +347,9 @@ public class MDSConfiguratorApp
             this.addEmptyCredentialSlots();
         }
         
-        // update HTTP CoAP Media Types
+        /**
+         * Update the HTTP CoAP Media Types properties file
+         */
         private void updateHTTPCoAPMediaTypes(String key,String value,String file) {            
             // DEBUG
             System.out.println("HTTP CoAP Media Types: Updating " + key + " = " + value);
@@ -299,7 +361,9 @@ public class MDSConfiguratorApp
             this.saveHTTPCoAPMediaTypesConfigFile();
         }
         
-        // update Logging Configuration
+        /**
+         * Update the Logging properties file
+         */
         private void updateLoggingConfiguration(String key,String value,String file) {
             // DEBUG
             System.out.println("Logging Configuration: Updating " + key + " = " + value);
@@ -311,7 +375,9 @@ public class MDSConfiguratorApp
             this.saveLoggingConfigFile();
         }
         
-        // update MQTT GW Configuration
+        /**
+         * Update the MQTT Gateway properties file
+         */
         private void updateMQTTGWConfiguration(String key,String value,String file) {
             // DEBUG
             System.out.println("MQTT GW Configuration: Updating " + key + " = " + value);
@@ -323,6 +389,23 @@ public class MDSConfiguratorApp
             this.saveMQTTGWConfigFile();
         }
         
+        /**
+         * Update the mDSConfigurator App (self) properties file
+         */
+        private void updateConfiguratorConfiguration(String key,String value,String file) {
+            // DEBUG
+            System.out.println("Configurator Configuration: Updating " + key + " = " + value);
+
+            // save the updated value the preferences
+            this.m_configurator_properties.put(key, value);
+            
+            // save the file
+            this.saveConfiguratorConfigFile();
+        }
+        
+        /**
+         * Execute a script
+         */
         private void executeScript(String script) {
             try {
                 //System.out.println("Executing: " + this.m_scripts_root + script);
@@ -332,10 +415,16 @@ public class MDSConfiguratorApp
             }
         }
         
+        /**
+         * Write a properties file
+         */
         private boolean writePropertiesFile(Properties props,String filename) {
             return this.writePropertiesFile(null, props, filename);
         }
         
+        /**
+         * Write a properties file (with comments)
+         */
         private boolean writePropertiesFile(String comments,Properties props,String filename) {
             OutputStream output = null;
             boolean written = false;
@@ -357,6 +446,9 @@ public class MDSConfiguratorApp
             return written;
         }
         
+        /**
+         * Save the device server configuration file
+         */
         private void saveDeviceServerConfigurationFile() {
             // DEBUG
             System.out.println("Saving mDS Configuration File...");
@@ -368,6 +460,9 @@ public class MDSConfiguratorApp
             if (written) this.executeScript("mergeDeviceServerConfiguration.sh");
         }
         
+        /**
+         * Save the device server credentials configuration file
+         */
         private void saveDeviceServerCredentialsFile() {
             // DEBUG
             System.out.println("Saving mDS Credentials File...");
@@ -376,6 +471,9 @@ public class MDSConfiguratorApp
             this.writePropertiesFile("mDS Credentials Updates",this.m_mds_creds_properties, "credentials.properties");
         }
         
+        /**
+         * Save the HTML CoAP Media Types configuration file
+         */
         private void saveHTTPCoAPMediaTypesConfigFile() {
             // DEBUG
             System.out.println("Saving HTTP CoAP Media Types Config File...");
@@ -384,6 +482,9 @@ public class MDSConfiguratorApp
             this.writePropertiesFile("HTTP CoAP Media Type Updates",this.m_http_coap_media_types_properties, "http-coap-mediatypes.properties");
         }
         
+        /**
+         * Save the logging configuration file
+         */
         private void saveLoggingConfigFile() {
             // DEBUG
             System.out.println("Saving Logging Config File...");
@@ -392,6 +493,9 @@ public class MDSConfiguratorApp
             this.writePropertiesFile("Logging Updates",this.m_logging_properties, "log4j.properties");
         }
         
+        /**
+         * Save the MQTT Gateway configuration file
+         */
         private void saveMQTTGWConfigFile() {
             // DEBUG
             System.out.println("Saving MQTT GW Config File...");
@@ -400,6 +504,20 @@ public class MDSConfiguratorApp
             this.writePropertiesFile("MQTT GW Updates",this.m_mqtt_gw_properties, "gateway.properties");
         }
         
+        /**
+         * Save the mDSConfigurator App (self) configuration file
+         */
+        private void saveConfiguratorConfigFile() {
+            // DEBUG
+            System.out.println("Saving Configurator Config File...");
+            
+            // rewrite the file
+            this.writePropertiesFile("ConfiguratorUpdates",this.m_configurator_properties, "configurator.properties");
+        }
+        
+        /**
+         * If the configuration table has no entries, hide it from display (using CCS primatives)
+         */
         private String checkAndHideTable(String html,String div_name,String table_index,Properties table_properties) {
             // build out the TAG
             String tag = this.m_div_hider_tag + table_index + "__";
@@ -418,15 +536,24 @@ public class MDSConfiguratorApp
             return html;
         }
         
+        /**
+         * Make sure that every table we display has something to display... if its empty, hide it...
+         */
         private String hideEmptyTables(String html) {
             html = this.checkAndHideTable(html,"ds_config_table","1",this.m_mds_config_properties);
             html = this.checkAndHideTable(html,"ds_creds_table","2",this.m_mds_creds_properties);
             html = this.checkAndHideTable(html,"http_coap_media_table","3",this.m_http_coap_media_types_properties);
             html = this.checkAndHideTable(html,"logging_table","4",this.m_logging_properties);
             html = this.checkAndHideTable(html,"mqtt_gw_config_table","5",this.m_mqtt_gw_properties);
+            html = this.checkAndHideTable(html,"configurator_config_table","6",this.m_configurator_properties);
             return html;
         }
         
+        /**
+         * Default HttpHandler handler method
+         * @param  t - the HttpExchange instance
+         * @throws IOException 
+         */
         @Override
         public void handle(HttpExchange t) throws IOException {
             String html = "";
@@ -462,6 +589,11 @@ public class MDSConfiguratorApp
                 if (file.equalsIgnoreCase("gateway.properties")) {
                     this.updateMQTTGWConfiguration(query.get("updated_key"), query.get("updated_value"), file);
                 }
+                
+                // Configurator Configuration
+                if (file.equalsIgnoreCase("configurator.properties")) {
+                    this.updateConfiguratorConfiguration(query.get("updated_key"), query.get("updated_value"), file);
+                }
             }
             
             // restart mDS
@@ -485,6 +617,7 @@ public class MDSConfiguratorApp
             html = this.displayCoAPMediaTypesConfig(html);
             html = this.displayLoggingConfig(html);
             html = this.displayMQTTGWConfig(html);
+            html = this.displayConfiguratorConfig(html);
             
             // update DIV's for tables that need to be hidden
             html = this.hideEmptyTables(html);
@@ -497,20 +630,73 @@ public class MDSConfiguratorApp
             // clean up
             os.close();
         }
+        
+        /**
+         * Load up the mDSConfigurator App (self) properties file
+         * @param filename - name of the mDSConfigurator properties file
+         */
+        public void loadProperties(String filename) {
+            this.getProperties(this.m_configurator_properties, filename);
+        }
+        
+        /**
+         * Get a string-based property for mDSConfigurator App (self)
+         * @param key - name of the property
+         * @return - the property value if found, NULL otherwise
+         */
+        public String getProperty(String key) {
+            return (String)this.m_configurator_properties.get(key);
+        }
+        
+        /**
+         * Get an integer-based property for mDSConfigurator App (self)
+         * @param key - name of the property
+         * @return - the property value if found as an integer, -1 otherwise or if parsing errors occur
+         */
+        public int getIntProperty(String key) {
+            try {
+                String s_value = this.getProperty(key);
+                return Integer.parseInt(s_value);
+            }
+            catch (Exception ex) {
+                System.out.println("Exception caught in getIntProperty (unable to parse integer): " + ex.getMessage());
+            }
+            return -1;
+        }
+        
+        /**
+         * Primary authenticator extending BasicAuthenticator's checkCredentials() method
+         * @param user - input username
+         * @param pwd - input secret
+         * @return true - authenticated, false - otherwise
+         */
+        @Override
+        public boolean checkCredentials(String user, String pwd) {
+            return user.equals(getProperty("admin_username")) && pwd.equals(getProperty("admin_password"));
+        }
     }
     
+    /**
+     * Primary entry point for mDSConfigurator App (self)
+     * @param args - command line arguments
+     * @throws Exception 
+     */
     public static void main(String[] args) throws Exception {
         // initialize and load the preferences for MDSConfigurator...
+        MDSConfigurator handler = new MDSConfigurator();
+        
+        // load the properties up
+        handler.loadProperties("configurator.properties");
         
         try {
             // Create the HTTPS Server and SSL/TLS Context
-            HttpsServer server = HttpsServer.create(new InetSocketAddress(MDSConfigurator.m_port),0);
+            HttpsServer server = HttpsServer.create(new InetSocketAddress(handler.getIntProperty("default_port")),0);
             SSLContext sslContext = SSLContext.getInstance("TLS");
 
             // initialise the keystore
-            char[] password = "arm1234".toCharArray();
+            char[] password = handler.getProperty("keystore_password").toCharArray();
             KeyStore ks = KeyStore.getInstance("JKS");
-            FileInputStream fis = new FileInputStream("mdsconfigurator.jks");
+            FileInputStream fis = new FileInputStream(handler.getProperty("keystore"));
             ks.load(fis,password);
 
             // setup the key manager factory
@@ -546,14 +732,10 @@ public class MDSConfiguratorApp
                     } );
                         
             // create the main context
-            HttpContext context = server.createContext("/", new MDSConfigurator());
+            HttpContext context = server.createContext("/", handler);
             
             // Create a basic auth authenticator context
-            context.setAuthenticator(new BasicAuthenticator("get") {
-                public boolean checkCredentials(String user, String pwd) {
-                    return user.equals("admin") && pwd.equals("admin");
-                }
-            });
+            context.setAuthenticator(handler);
             
             // no executor
             server.setExecutor(null);
@@ -566,4 +748,3 @@ public class MDSConfiguratorApp
         }
     }
 }
-
