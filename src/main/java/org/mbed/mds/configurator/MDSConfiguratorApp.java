@@ -1,5 +1,7 @@
 package org.mbed.mds.configurator;
 
+import com.sun.net.httpserver.BasicAuthenticator;
+import com.sun.net.httpserver.HttpContext;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -7,16 +9,25 @@ import java.net.InetSocketAddress;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsParameters;
+import com.sun.net.httpserver.HttpsServer;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.security.KeyStore;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.TrustManagerFactory;
 
 /**
  * mDS Configurator
@@ -489,10 +500,70 @@ public class MDSConfiguratorApp
     }
     
     public static void main(String[] args) throws Exception {
-        HttpServer server = HttpServer.create(new InetSocketAddress(MDSConfigurator.m_port), 0);
-        server.createContext("/", new MDSConfigurator());
-        server.setExecutor(null);
-        server.start();
+        // initialize and load the preferences for MDSConfigurator...
+        
+        try {
+            // Create the HTTPS Server and SSL/TLS Context
+            HttpsServer server = HttpsServer.create(new InetSocketAddress(MDSConfigurator.m_port),0);
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+
+            // initialise the keystore
+            char[] password = "arm1234".toCharArray();
+            KeyStore ks = KeyStore.getInstance("JKS");
+            FileInputStream fis = new FileInputStream("mdsconfigurator.jks");
+            ks.load(fis,password);
+
+            // setup the key manager factory
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+            kmf.init(ks,password);
+
+            // setup the trust manager factory
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+            tmf.init(ks);
+
+            // setup the HTTPS context and parameters
+            sslContext.init(kmf.getKeyManagers(),tmf.getTrustManagers(),null);
+            server.setHttpsConfigurator( 
+                    new HttpsConfigurator(sslContext)
+                    {
+                        public void configure(HttpsParameters params) {
+                            try {
+                                // initialise the SSL context
+                                SSLContext c = SSLContext.getDefault ();
+                                SSLEngine engine = c.createSSLEngine ();
+                                params.setNeedClientAuth ( false );
+                                params.setCipherSuites ( engine.getEnabledCipherSuites () );
+                                params.setProtocols ( engine.getEnabledProtocols () );
+
+                                // get the default parameters
+                                SSLParameters defaultSSLParameters = c.getDefaultSSLParameters ();
+                                params.setSSLParameters ( defaultSSLParameters );
+                            }
+                            catch ( Exception ex ) {
+                                System.out.println("HttpsConfigurator: Failed to create HTTPS port. Exception: " + ex.getMessage());
+                            }
+                        }
+                    } );
+                        
+            // create the main context
+            HttpContext context = server.createContext("/", new MDSConfigurator());
+            
+            // Create a basic auth authenticator context
+            context.setAuthenticator(new BasicAuthenticator("get") {
+                public boolean checkCredentials(String user, String pwd) {
+                    return user.equals("admin") && pwd.equals("admin");
+                }
+            });
+            
+            // no executor
+            server.setExecutor(null);
+            
+            // start the service
+            server.start();
+        }
+        catch (Exception ex) {
+            System.out.println("Caught Exception in main(): Exception: " + ex.getMessage());
+        }
     }
 }
 

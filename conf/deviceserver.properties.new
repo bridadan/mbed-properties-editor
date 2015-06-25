@@ -165,5 +165,5 @@
 #sms.plugin.att.statusListener.keystore.alias=
 
 #mDS Configuration Updates
-#Wed Jun 24 09:31:16 CDT 2015
-m2m-http.password=endpoint3
+#Wed Jun 24 22:42:21 CDT 2015
+m2m-http.password=endpoint
