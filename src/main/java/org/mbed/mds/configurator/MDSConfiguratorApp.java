@@ -276,7 +276,7 @@ public class MDSConfiguratorApp
          */
         private String displayMQTTGWConfig(String html) {
             if (this.m_mqtt_gw_properties.isEmpty()) this.getProperties(this.m_mqtt_gw_properties,"gateway.properties");
-            return this.buildConfigurationTable(html,this.m_mqtt_gw_properties,"gateway.properties","__MQTT_GW_CONFIG_TABLE__");
+            return this.buildConfigurationTable(html,this.m_mqtt_gw_properties,"gateway.properties","__MQTT_GW_CONFIG_TABLE__",true);
         }
         
         /**
