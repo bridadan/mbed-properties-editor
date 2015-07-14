@@ -50,7 +50,7 @@ public class MDSConfiguratorApp
         private static String m_config_files_root = "/conf/";                 // directory relative to jar file for config files...
         private static String m_templates_root = "/templates/";               // directory relative to jar file for html templates...
         
-        private static int m_extra_cred_slots = 2;                            // number of extra slots to insert into UI for new creds
+        private static int m_extra_slots = 5;                                 // number of extra slots to insert into UI for new config entries
         private static String m_empty_slot_key = "unused";                    // empty slot key
         private static String m_empty_slot_value = "unused";                  // empty slot value
         
@@ -236,10 +236,10 @@ public class MDSConfiguratorApp
         }
         
         /**
-         * Add some empty credential slots in the configuration table for adding new credential entries
+         * Add some empty configuration slots in the configuration table for adding new config entries
          */
-        private void addEmptyCredentialSlots() {
-            for(int i=0;i<this.m_extra_cred_slots;++i) {
+        private void addEmptyConfigSlots() {
+            for(int i=0;i<this.m_extra_slots;++i) {
                 this.m_mds_creds_properties.put(this.m_empty_slot_key + "-" + (i+1),this.m_empty_slot_value);
             }
         }
@@ -250,7 +250,7 @@ public class MDSConfiguratorApp
         private String displayDeviceServerCredentials(String html) {
             if (this.m_mds_creds_properties.isEmpty()) {
                 this.getProperties(this.m_mds_creds_properties,"credentials.properties");
-                this.addEmptyCredentialSlots();
+                this.addEmptyConfigSlots();
             }
             return this.buildConfigurationTable(html,this.m_mds_creds_properties,"credentials.properties","__DS_CREDS_TABLE__",true);
         }
@@ -275,7 +275,10 @@ public class MDSConfiguratorApp
          * Display the MQTT Gateway properties as HTML
          */
         private String displayMQTTGWConfig(String html) {
-            if (this.m_mqtt_gw_properties.isEmpty()) this.getProperties(this.m_mqtt_gw_properties,"gateway.properties");
+            if (this.m_mqtt_gw_properties.isEmpty()) {
+                this.getProperties(this.m_mqtt_gw_properties,"gateway.properties");
+                this.addEmptyConfigSlots();
+            }
             return this.buildConfigurationTable(html,this.m_mqtt_gw_properties,"gateway.properties","__MQTT_GW_CONFIG_TABLE__",true);
         }
         
@@ -303,9 +306,9 @@ public class MDSConfiguratorApp
         }
         
         /**
-         * Clear out the non-used extra credential slots - don't try to store them...
+         * Clear out the non-used extra configuration entry slots - don't try to store them...
          */
-        private void clearEmptyCredentialSlots() {
+        private void clearEmptyConfigSlots() {
             Enumeration e = this.m_mds_creds_properties.propertyNames();
             while (e.hasMoreElements()) {
                 String key = (String) e.nextElement();
@@ -338,13 +341,13 @@ public class MDSConfiguratorApp
             }
             
             // clear out the empty slots
-            this.clearEmptyCredentialSlots();
+            this.clearEmptyConfigSlots();
 
             // save the file...
             this.saveDeviceServerCredentialsFile();
             
-            // put back the empty slots
-            this.addEmptyCredentialSlots();
+            // put back the empty config slots
+            this.addEmptyConfigSlots();
         }
         
         /**
