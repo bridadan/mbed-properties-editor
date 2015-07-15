@@ -238,9 +238,9 @@ public class MDSConfiguratorApp
         /**
          * Add some empty configuration slots in the configuration table for adding new config entries
          */
-        private void addEmptyConfigSlots() {
+        private void addEmptyConfigSlots(Properties props) {
             for(int i=0;i<this.m_extra_slots;++i) {
-                this.m_mds_creds_properties.put(this.m_empty_slot_key + "-" + (i+1),this.m_empty_slot_value);
+                props.put(this.m_empty_slot_key + "-" + (i+1),this.m_empty_slot_value);
             }
         }
         
@@ -250,7 +250,7 @@ public class MDSConfiguratorApp
         private String displayDeviceServerCredentials(String html) {
             if (this.m_mds_creds_properties.isEmpty()) {
                 this.getProperties(this.m_mds_creds_properties,"credentials.properties");
-                this.addEmptyConfigSlots();
+                this.addEmptyConfigSlots(this.m_mds_creds_properties);
             }
             return this.buildConfigurationTable(html,this.m_mds_creds_properties,"credentials.properties","__DS_CREDS_TABLE__",true);
         }
@@ -277,7 +277,7 @@ public class MDSConfiguratorApp
         private String displayMQTTGWConfig(String html) {
             if (this.m_mqtt_gw_properties.isEmpty()) {
                 this.getProperties(this.m_mqtt_gw_properties,"gateway.properties");
-                this.addEmptyConfigSlots();
+                this.addEmptyConfigSlots(this.m_mqtt_gw_properties);
             }
             return this.buildConfigurationTable(html,this.m_mqtt_gw_properties,"gateway.properties","__MQTT_GW_CONFIG_TABLE__",true);
         }
@@ -308,13 +308,36 @@ public class MDSConfiguratorApp
         /**
          * Clear out the non-used extra configuration entry slots - don't try to store them...
          */
-        private void clearEmptyConfigSlots() {
-            Enumeration e = this.m_mds_creds_properties.propertyNames();
+        private void clearEmptyConfigSlots(Properties props) {
+            Enumeration e = props.propertyNames();
             while (e.hasMoreElements()) {
                 String key = (String) e.nextElement();
                 if (key.contains(this.m_empty_slot_key)) {
-                    this.m_mds_creds_properties.remove(key);
+                    props.remove(key);
                 }
+            }
+        }
+        
+        /**
+         * Update an expandable properties file
+         */
+        private void updateExpandableConfiguration(Properties props, String key,String value,String file, String new_key) {
+            if (new_key != null && new_key.equals(key) == false) {
+                // DEBUG
+                System.out.println("mDS config(new key): Setting " + new_key + " = " + value);
+                
+                // delete the old preference
+                props.remove(key);
+
+                // put a new key with the updated value
+                props.put(new_key, value);
+            }
+            else {
+                // DEBUG
+                System.out.println("mDS config: Updating " + key + " = " + value);
+
+                // save the updated value the preferences
+                props.put(key, value);
             }
         }
         
@@ -322,32 +345,16 @@ public class MDSConfiguratorApp
          * Update the credentials properties file
          */
         private void updateDeviceServerCredentials(String key,String value,String file, String new_key) {
-            if (new_key != null && new_key.equals(key) == false) {
-                // DEBUG
-                System.out.println("mDS Credentials(new key): Setting " + new_key + " = " + value);
-                
-                // delete the old preference
-                this.m_mds_creds_properties.remove(key);
-
-                // put a new key with the updated value
-                this.m_mds_creds_properties.put(new_key, value);
-            }
-            else {
-                // DEBUG
-                System.out.println("mDS Credentials: Updating " + key + " = " + value);
-
-                // save the updated value the preferences
-                this.m_mds_creds_properties.put(key, value);
-            }
+            this.updateExpandableConfiguration(this.m_mds_creds_properties,key,value,file,new_key);
             
             // clear out the empty slots
-            this.clearEmptyConfigSlots();
+            this.clearEmptyConfigSlots(this.m_mds_creds_properties);
 
             // save the file...
             this.saveDeviceServerCredentialsFile();
             
             // put back the empty config slots
-            this.addEmptyConfigSlots();
+            this.addEmptyConfigSlots(this.m_mds_creds_properties);
         }
         
         /**
@@ -381,15 +388,18 @@ public class MDSConfiguratorApp
         /**
          * Update the MQTT Gateway properties file
          */
-        private void updateMQTTGWConfiguration(String key,String value,String file) {
-            // DEBUG
-            System.out.println("MQTT GW Configuration: Updating " + key + " = " + value);
-
-            // save the updated value the preferences
-            this.m_mqtt_gw_properties.put(key, value);
+        private void updateMQTTGWConfiguration(String key,String value,String file,String new_key) {
+           
+            this.updateExpandableConfiguration(this.m_mqtt_gw_properties,key,value,file,new_key);
             
+            // clear out the empty slots
+            this.clearEmptyConfigSlots(this.m_mqtt_gw_properties);
+
             // save the file
             this.saveMQTTGWConfigFile();
+            
+            // put back the empty config slots
+            this.addEmptyConfigSlots(this.m_mqtt_gw_properties);
         }
         
         /**
@@ -590,7 +600,7 @@ public class MDSConfiguratorApp
                 
                 // MQTT Gateway Configuration
                 if (file.equalsIgnoreCase("gateway.properties")) {
-                    this.updateMQTTGWConfiguration(query.get("updated_key"), query.get("updated_value"), file);
+                    this.updateMQTTGWConfiguration(query.get("updated_key"), query.get("updated_value"), file , query.get("new_key"));
                 }
                 
                 // Configurator Configuration
