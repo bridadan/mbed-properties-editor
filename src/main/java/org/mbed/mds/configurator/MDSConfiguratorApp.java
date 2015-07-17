@@ -277,7 +277,7 @@ public class MDSConfiguratorApp
         private String displayMQTTGWConfig(String html) {
             if (this.m_mqtt_gw_properties.isEmpty()) {
                 this.getProperties(this.m_mqtt_gw_properties,"gateway.properties");
-                this.addEmptyConfigSlots(this.m_mqtt_gw_properties);
+                // DISABLE: this.addEmptyConfigSlots(this.m_mqtt_gw_properties);
             }
             return this.buildConfigurationTable(html,this.m_mqtt_gw_properties,"gateway.properties","__MQTT_GW_CONFIG_TABLE__",true);
         }
@@ -390,16 +390,22 @@ public class MDSConfiguratorApp
          */
         private void updateMQTTGWConfiguration(String key,String value,String file,String new_key) {
            
-            this.updateExpandableConfiguration(this.m_mqtt_gw_properties,key,value,file,new_key);
+            // DISABLE this.updateExpandableConfiguration(this.m_mqtt_gw_properties,key,value,file,new_key);
             
             // clear out the empty slots
-            this.clearEmptyConfigSlots(this.m_mqtt_gw_properties);
+            // DISABLE this.clearEmptyConfigSlots(this.m_mqtt_gw_properties);
+            
+            // DEBUG
+            System.out.println("Logging MQTT GW Configuration: Updating " + key + " = " + value);
+            
+            // save the updated value in preferences
+            this.m_mqtt_gw_properties.put(key, value);
 
             // save the file
             this.saveMQTTGWConfigFile();
             
             // put back the empty config slots
-            this.addEmptyConfigSlots(this.m_mqtt_gw_properties);
+            // DISABLE this.addEmptyConfigSlots(this.m_mqtt_gw_properties);
         }
         
         /**
