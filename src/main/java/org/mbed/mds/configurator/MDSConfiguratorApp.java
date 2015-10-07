@@ -17,7 +17,12 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.security.KeyManagementException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,19 +45,19 @@ public class MDSConfiguratorApp
      * MDSConfigurator - the primary class implementing MDSConfiguratorApp
      */
     static class MDSConfigurator extends BasicAuthenticator implements HttpHandler {   
-        private static String m_title = "mbed Device Server Configuration";   // Title
-        private static int m_num_tables = 6;                                  // max number of tables shown
+        private static final String m_title = "mbed Device Server Configuration";   // Title
+        private static final int m_num_tables = 6;                                  // max number of tables shown
         
-        private static String m_div_hider_tag = "__HIDE_TABLE_";              // DIV hiding table tag
-        private static String m_div_hide = "div#__NAME__ { display: none; }"; // DIV hide directive template
+        private static final String m_div_hider_tag = "__HIDE_TABLE_";              // DIV hiding table tag
+        private static final String m_div_hide = "div#__NAME__ { display: none; }"; // DIV hide directive template
         
-        private static String m_scripts_root = "./scripts/";                  // directory relative to jar file for scripts...
-        private static String m_config_files_root = "/conf/";                 // directory relative to jar file for config files...
-        private static String m_templates_root = "/templates/";               // directory relative to jar file for html templates...
+        private static final String m_scripts_root = "./scripts/";                  // directory relative to jar file for scripts...
+        private static final String m_config_files_root = "/conf/";                 // directory relative to jar file for config files...
+        private static final String m_templates_root = "/templates/";               // directory relative to jar file for html templates...
         
-        private static int m_extra_slots = 5;                                 // number of extra slots to insert into UI for new config entries
-        private static String m_empty_slot_key = "unused";                    // empty slot key
-        private static String m_empty_slot_value = "unused";                  // empty slot value
+        private static final int m_extra_slots = 5;                                 // number of extra slots to insert into UI for new config entries
+        private static final String m_empty_slot_key = "unused";                    // empty slot key
+        private static final String m_empty_slot_value = "unused";                  // empty slot value
         
         private final Properties m_mds_config_properties;                     // mDS Properties
         private final Properties m_mds_creds_properties;                      // mDS Credential Properties
@@ -79,13 +84,14 @@ public class MDSConfiguratorApp
         /**
          * read in file into a string
          */
+        @SuppressWarnings("empty-statement")
         private String fileToString(String filename)  {
             String contents = "";
             InputStream input = null;
             
             try {
                 String current = new java.io.File( "." ).getCanonicalPath();
-                String fq_filename = current + this.m_templates_root + filename;
+                String fq_filename = current + MDSConfigurator.m_templates_root + filename;
                 input = new FileInputStream(fq_filename);
                 Reader reader = new BufferedReader(new InputStreamReader(input));
                 StringBuilder builder = new StringBuilder();
@@ -97,7 +103,9 @@ public class MDSConfiguratorApp
                 input.close();
                 return builder.toString();
             }
-            catch (Exception ex) {
+            catch (IOException ex) {
+                // silent
+                ;
             }
             return null;
         }
@@ -116,7 +124,7 @@ public class MDSConfiguratorApp
             html += this.fileToString("editor.html");
             
             // update some of the key variables
-            html = html.replace("__TITLE__",this.m_title);
+            html = html.replace("__TITLE__",MDSConfigurator.m_title);
             
             // return the html
             return html;
@@ -125,11 +133,14 @@ public class MDSConfiguratorApp
         /**
          * Get the current working directory
          */
+        @SuppressWarnings("empty-statement")
         private String getWorkingDirectory() {
             try {
                 return new java.io.File(".").getCanonicalPath();
             }
-            catch (Exception ex) {
+            catch (IOException ex) {
+                // silent
+                ;
             }
             return "./";
         }
@@ -137,19 +148,47 @@ public class MDSConfiguratorApp
         /**
          * Open Properties and read in from properties file
          */
+        @SuppressWarnings("empty-statement")
         private Properties getProperties(Properties prop,String filename) {
+            InputStream input = null;
             try {
-                String fq_filename = this.getWorkingDirectory() + this.m_config_files_root + filename;
+                String fq_filename = this.getWorkingDirectory() + MDSConfigurator.m_config_files_root + filename;
                 //System.out.println("Opening File: " + fq_filename);
-                InputStream input = new FileInputStream(fq_filename);
+                input = new FileInputStream(fq_filename);
                 prop.clear();
                 prop.load(input);
                 input.close();
             }
-            catch (Exception ex) {
+            catch (IOException ex) {
                 System.out.println("Exception during Reading Properties File: " + ex.getMessage());
+                prop.clear();
+                try {
+                    if (input != null) {
+                        input.close();
+                    }
+                }
+                catch (IOException ioex) {
+                    // silent
+                    ;
+                }
             }
             return prop;
+        }
+            
+        private boolean showField(Properties props,String key) {
+            boolean show = false;
+            if (props != null && props.isEmpty() == false && key != null && key.length() > 0) {
+                String fields = props.getProperty("config_fields");
+                if (fields != null && fields.length() > 0 && props != null) {
+                    String[] shown = fields.split(";");
+                    for(int i=0;i<shown.length && !show;++i) {
+                        if (key.equalsIgnoreCase(shown[i])) {
+                            show = true;
+                        }
+                    }
+                }
+            }
+            return show;
         }
         
         /**
@@ -162,23 +201,25 @@ public class MDSConfiguratorApp
             // enumerate through the properties and fill the table
             Enumeration e = props.propertyNames();
             while (e.hasMoreElements()) {
-                table += "<tr>";
-                
-                // Key
                 String key = (String) e.nextElement();
-                if (editable_key)
-                    table += "<td id=\"" + key + "-key\" contenteditable=\"true\">" + key + "</td>";
-                else
-                    table += "<td id=\"" + key + "-key\" contenteditable=\"false\">" + key + "</td>";
-                
-                // Value
-                String value = props.getProperty(key);               
-                table += "<td id=\"" + key + "\" contenteditable=\"true\" align=\"left\" height=\"" + "auto" + "\" width=\"" + "auto" + "\">" + value + "</td>";
-                String save_button = "<button name=\"save_button\" value=\"" + key + "\" type=\"button\" onclick=saveData('" + key + "','" + file + "') style=\"height:35px;width:80px\">SAVE</button>";
-                table += "<td align=\"center\" height=\"35px\" width=\"210px\">" + save_button + "</td>";
-     
-                // finish row
-                table += "</tr>";
+                if (this.showField(props,key)) {
+                    table += "<tr>";
+
+                    // Key
+                    if (editable_key)
+                        table += "<td id=\"" + key + "-key\" contenteditable=\"true\">" + key + "</td>";
+                    else
+                        table += "<td id=\"" + key + "-key\" contenteditable=\"false\">" + key + "</td>";
+
+                    // Value
+                    String value = props.getProperty(key);               
+                    table += "<td id=\"" + key + "\" contenteditable=\"true\" align=\"left\" height=\"" + "auto" + "\" width=\"" + "auto" + "\">" + value + "</td>";
+                    String save_button = "<button name=\"save_button\" value=\"" + key + "\" type=\"button\" onclick=saveData('" + key + "','" + file + "') style=\"height:35px;width:80px\">SAVE</button>";
+                    table += "<td align=\"center\" height=\"35px\" width=\"210px\">" + save_button + "</td>";
+
+                    // finish row
+                    table += "</tr>";
+                }
             }
             
             // add the trailing tag
@@ -239,8 +280,8 @@ public class MDSConfiguratorApp
          * Add some empty configuration slots in the configuration table for adding new config entries
          */
         private void addEmptyConfigSlots(Properties props) {
-            for(int i=0;i<this.m_extra_slots;++i) {
-                props.put(this.m_empty_slot_key + "-" + (i+1),this.m_empty_slot_value);
+            for(int i=0;i<MDSConfigurator.m_extra_slots;++i) {
+                Object put = props.put(MDSConfigurator.m_empty_slot_key + "-" + (i+1),MDSConfigurator.m_empty_slot_value);
             }
         }
         
@@ -250,7 +291,7 @@ public class MDSConfiguratorApp
         private String displayDeviceServerCredentials(String html) {
             if (this.m_mds_creds_properties.isEmpty()) {
                 this.getProperties(this.m_mds_creds_properties,"credentials.properties");
-                this.addEmptyConfigSlots(this.m_mds_creds_properties);
+                // DISABLE: this.addEmptyConfigSlots(this.m_mds_creds_properties);
             }
             return this.buildConfigurationTable(html,this.m_mds_creds_properties,"credentials.properties","__DS_CREDS_TABLE__",true);
         }
@@ -312,7 +353,7 @@ public class MDSConfiguratorApp
             Enumeration e = props.propertyNames();
             while (e.hasMoreElements()) {
                 String key = (String) e.nextElement();
-                if (key.contains(this.m_empty_slot_key)) {
+                if (key.contains(MDSConfigurator.m_empty_slot_key)) {
                     props.remove(key);
                 }
             }
@@ -428,8 +469,8 @@ public class MDSConfiguratorApp
         private void executeScript(String script) {
             try {
                 //System.out.println("Executing: " + this.m_scripts_root + script);
-                Runtime.getRuntime().exec(this.m_scripts_root + script);
-            } catch (Exception ex) {
+                Runtime.getRuntime().exec(MDSConfigurator.m_scripts_root + script);
+            } catch (IOException ex) {
                 System.out.println("Exception caught: " + ex.getMessage() + " script: " + script);
             }
         }
@@ -450,12 +491,12 @@ public class MDSConfiguratorApp
                 
             if (props.isEmpty() == false) {
                 try {
-                    String fq_filename = this.getWorkingDirectory() + this.m_config_files_root + filename;
+                    String fq_filename = this.getWorkingDirectory() + MDSConfigurator.m_config_files_root + filename;
                     output = new FileOutputStream(fq_filename);
                     props.store(output, comments);
                     written = true;
                 } 
-                catch (Exception ex) {
+                catch (IOException ex) {
                     System.out.println("Exception caught: " + ex.getMessage() + " Filename: " + filename);
                 }
             }
@@ -539,12 +580,12 @@ public class MDSConfiguratorApp
          */
         private String checkAndHideTable(String html,String div_name,String table_index,Properties table_properties) {
             // build out the TAG
-            String tag = this.m_div_hider_tag + table_index + "__";
+            String tag = MDSConfigurator.m_div_hider_tag + table_index + "__";
             
             // see if we have properties
             if (table_properties.isEmpty()) {
                 // hide the table via DIV...
-                String div = this.m_div_hide.replace("__NAME__", div_name);
+                String div = MDSConfigurator.m_div_hide.replace("__NAME__", div_name);
                 html = html.replace(tag, div);
             }
             else {
@@ -677,7 +718,7 @@ public class MDSConfiguratorApp
                 String s_value = this.getProperty(key);
                 return Integer.parseInt(s_value);
             }
-            catch (Exception ex) {
+            catch (NumberFormatException ex) {
                 System.out.println("Exception caught in getIntProperty (unable to parse integer): " + ex.getMessage());
             }
             return -1;
@@ -731,6 +772,7 @@ public class MDSConfiguratorApp
             server.setHttpsConfigurator( 
                     new HttpsConfigurator(sslContext)
                     {
+                        @Override
                         public void configure(HttpsParameters params) {
                             try {
                                 // initialise the SSL context
@@ -744,7 +786,7 @@ public class MDSConfiguratorApp
                                 SSLParameters defaultSSLParameters = c.getDefaultSSLParameters ();
                                 params.setSSLParameters ( defaultSSLParameters );
                             }
-                            catch ( Exception ex ) {
+                            catch ( NoSuchAlgorithmException ex ) {
                                 System.out.println("HttpsConfigurator: Failed to create HTTPS port. Exception: " + ex.getMessage());
                             }
                         }
@@ -762,7 +804,22 @@ public class MDSConfiguratorApp
             // start the service
             server.start();
         }
-        catch (Exception ex) {
+        catch (IOException ex) {
+            System.out.println("Caught Exception in main(): Exception: " + ex.getMessage());
+        }
+        catch (KeyManagementException ex) {
+            System.out.println("Caught Exception in main(): Exception: " + ex.getMessage());
+        }
+        catch (KeyStoreException ex) {
+            System.out.println("Caught Exception in main(): Exception: " + ex.getMessage());
+        }
+        catch (NoSuchAlgorithmException ex) {
+            System.out.println("Caught Exception in main(): Exception: " + ex.getMessage());
+        }
+        catch (UnrecoverableKeyException ex) {
+            System.out.println("Caught Exception in main(): Exception: " + ex.getMessage());
+        }
+        catch (CertificateException ex) {
             System.out.println("Caught Exception in main(): Exception: " + ex.getMessage());
         }
     }
