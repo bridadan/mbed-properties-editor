@@ -194,15 +194,17 @@ public class MDSConfiguratorApp
         /**
          * Build out the HTML table representing the properties file 
          */
-        private String createConfigTableAsHTML(Properties props,String file, boolean editable_key) {
+        private String createConfigTableAsHTML(Properties props,String file, boolean editable_key,boolean do_filter) {
             // start the table
             String table = "<table border=\"0\">";
+            boolean shown = true;
             
             // enumerate through the properties and fill the table
             Enumeration e = props.propertyNames();
             while (e.hasMoreElements()) {
                 String key = (String) e.nextElement();
-                if (this.showField(props,key)) {
+                if (do_filter) shown = this.showField(props,key);
+                if (shown) {
                     table += "<tr>";
 
                     // Key
@@ -233,15 +235,22 @@ public class MDSConfiguratorApp
          * Build out the configuration table (properties from a properties file) as HTML content
          */
         private String buildConfigurationTable(String html,Properties props,String file,String key) { 
-            return this.buildConfigurationTable(html, props, file, key, false);
+            return this.buildConfigurationTable(html, props, file, key, false, false);
         }
         
         /**
          * Build out the configuration table (properties from a properties file) as HTML content
          */
-        private String buildConfigurationTable(String html,Properties props,String file,String key,boolean editable_key) {            
+        private String buildConfigurationTable(String html,Properties props,String file,String key,boolean do_filter) { 
+            return this.buildConfigurationTable(html, props, file, key, false,do_filter);
+        }
+        
+        /**
+         * Build out the configuration table (properties from a properties file) as HTML content
+         */
+        private String buildConfigurationTable(String html,Properties props,String file,String key,boolean editable_key,boolean do_filter) {            
             // create the actual configuration table has HTML
-            String preference_table = this.createConfigTableAsHTML(props,file,editable_key);
+            String preference_table = this.createConfigTableAsHTML(props,file,editable_key,do_filter);
             
             // fill in the body
             html = html.replace(key,preference_table);
@@ -320,7 +329,7 @@ public class MDSConfiguratorApp
                 this.getProperties(this.m_mqtt_gw_properties,"gateway.properties");
                 // DISABLE: this.addEmptyConfigSlots(this.m_mqtt_gw_properties);
             }
-            return this.buildConfigurationTable(html,this.m_mqtt_gw_properties,"gateway.properties","__MQTT_GW_CONFIG_TABLE__",true);
+            return this.buildConfigurationTable(html,this.m_mqtt_gw_properties,"gateway.properties","__MQTT_GW_CONFIG_TABLE__",true,true);  // filter
         }
         
         /**
