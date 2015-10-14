@@ -45,7 +45,7 @@ public class MDSConfiguratorApp
      * MDSConfigurator - the primary class implementing MDSConfiguratorApp
      */
     static class MDSConfigurator extends BasicAuthenticator implements HttpHandler {   
-        private static final String m_title = "mbed Device Server Configuration";   // Title
+        private static final String m_title = "mbed Services Configuration";        // Title
         private static final int m_num_tables = 6;                                  // max number of tables shown
         
         private static final String m_div_hider_tag = "__HIDE_TABLE_";              // DIV hiding table tag
