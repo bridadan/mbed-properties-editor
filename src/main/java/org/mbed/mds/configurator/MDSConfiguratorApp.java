@@ -35,7 +35,7 @@ import javax.net.ssl.TrustManagerFactory;
 
 /**
  * MDSConfiguratorApp - this application displays configuration files from the mDS environment (as well as itself) to permit
- * web-based customization of mDS and its sub-components (including the optional MQTT Gateway)
+ * web-based customization of mDS and its sub-components (including the optional CB Bridge)
  * 
  * @author Doug Anson
  */
@@ -63,7 +63,7 @@ public class MDSConfiguratorApp
         private final Properties m_mds_creds_properties;                      // mDS Credential Properties
         private final Properties m_http_coap_media_types_properties;          // HTTP CoAP Media Types Properties
         private final Properties m_logging_properties;                        // Logging Properties
-        private final Properties m_mqtt_gw_properties;                        // MQTT Gateway Properties
+        private final Properties m_cb_properties;                        // CB Bridge Properties
         private final Properties m_mds_config_properties_updated;             // mDS Updated Properties (deltas)
         private final Properties m_configurator_properties;                   // mDSConfigurator App (self) properties
         
@@ -76,7 +76,7 @@ public class MDSConfiguratorApp
             this.m_mds_creds_properties = new Properties();
             this.m_http_coap_media_types_properties = new Properties();
             this.m_logging_properties = new Properties();
-            this.m_mqtt_gw_properties = new Properties();
+            this.m_cb_properties = new Properties();
             this.m_mds_config_properties_updated = new Properties();
             this.m_configurator_properties = new Properties();
         }
@@ -322,14 +322,14 @@ public class MDSConfiguratorApp
         }
         
         /**
-         * Display the MQTT Gateway properties as HTML
+         * Display the CB Bridge properties as HTML
          */
-        private String displayMQTTGWConfig(String html) {
-            if (this.m_mqtt_gw_properties.isEmpty()) {
-                this.getProperties(this.m_mqtt_gw_properties,"gateway.properties");
-                // DISABLE: this.addEmptyConfigSlots(this.m_mqtt_gw_properties);
+        private String displayConnectorBridgeConfig(String html) {
+            if (this.m_cb_properties.isEmpty()) {
+                this.getProperties(this.m_cb_properties,"gateway.properties");
+                // DISABLE: this.addEmptyConfigSlots(this.m_cb_properties);
             }
-            return this.buildConfigurationTable(html,this.m_mqtt_gw_properties,"gateway.properties","__MQTT_GW_CONFIG_TABLE__",true,true);  // filter
+            return this.buildConfigurationTable(html,this.m_cb_properties,"gateway.properties","__CB_CONFIG_TABLE__",true,true);  // filter
         }
         
         /**
@@ -436,26 +436,26 @@ public class MDSConfiguratorApp
         }
         
         /**
-         * Update the MQTT Gateway properties file
+         * Update the CB Bridge properties file
          */
-        private void updateMQTTGWConfiguration(String key,String value,String file,String new_key) {
+        private void updateCBGWConfiguration(String key,String value,String file,String new_key) {
            
-            // DISABLE this.updateExpandableConfiguration(this.m_mqtt_gw_properties,key,value,file,new_key);
+            // DISABLE this.updateExpandableConfiguration(this.m_cb_properties,key,value,file,new_key);
             
             // clear out the empty slots
-            // DISABLE this.clearEmptyConfigSlots(this.m_mqtt_gw_properties);
+            // DISABLE this.clearEmptyConfigSlots(this.m_cb_properties);
             
             // DEBUG
-            System.out.println("Logging MQTT GW Configuration: Updating " + key + " = " + value);
+            System.out.println("Logging Connector Bridge Configuration: Updating " + key + " = " + value);
             
             // save the updated value in preferences
-            this.m_mqtt_gw_properties.put(key, value);
+            this.m_cb_properties.put(key, value);
 
             // save the file
-            this.saveMQTTGWConfigFile();
+            this.saveCBGWConfigFile();
             
             // put back the empty config slots
-            // DISABLE this.addEmptyConfigSlots(this.m_mqtt_gw_properties);
+            // DISABLE this.addEmptyConfigSlots(this.m_cb_properties);
         }
         
         /**
@@ -563,14 +563,14 @@ public class MDSConfiguratorApp
         }
         
         /**
-         * Save the MQTT Gateway configuration file
+         * Save the CB Bridge configuration file
          */
-        private void saveMQTTGWConfigFile() {
+        private void saveCBGWConfigFile() {
             // DEBUG
-            System.out.println("Saving MQTT GW Config File...");
+            System.out.println("Saving Connector Bridge Config File...");
             
             // rewrite the file
-            this.writePropertiesFile("MQTT GW Updates",this.m_mqtt_gw_properties, "gateway.properties");
+            this.writePropertiesFile("Connector Bridge Updates",this.m_cb_properties, "gateway.properties");
         }
         
         /**
@@ -613,7 +613,7 @@ public class MDSConfiguratorApp
             html = this.checkAndHideTable(html,"ds_creds_table","2",this.m_mds_creds_properties);
             html = this.checkAndHideTable(html,"http_coap_media_table","3",this.m_http_coap_media_types_properties);
             html = this.checkAndHideTable(html,"logging_table","4",this.m_logging_properties);
-            html = this.checkAndHideTable(html,"mqtt_gw_config_table","5",this.m_mqtt_gw_properties);
+            html = this.checkAndHideTable(html,"cb_config_table","5",this.m_cb_properties);
             html = this.checkAndHideTable(html,"configurator_config_table","6",this.m_configurator_properties);
             return html;
         }
@@ -654,9 +654,9 @@ public class MDSConfiguratorApp
                     this.updateLoggingConfiguration(query.get("updated_key"), query.get("updated_value"), file);
                 }
                 
-                // MQTT Gateway Configuration
+                // CB Bridge Configuration
                 if (file.equalsIgnoreCase("gateway.properties")) {
-                    this.updateMQTTGWConfiguration(query.get("updated_key"), query.get("updated_value"), file , query.get("new_key"));
+                    this.updateCBGWConfiguration(query.get("updated_key"), query.get("updated_value"), file , query.get("new_key"));
                 }
                 
                 // Configurator Configuration
@@ -671,10 +671,10 @@ public class MDSConfiguratorApp
                 this.executeScript("restartMDS.sh");
             }
             
-            // restart MQTT GW
-            if (query.get("mqttgw") != null) {
-                System.out.println("Restarting mbed MQTT Gateway...");
-                this.executeScript("restartMQTTGW.sh");
+            // restart Connector Bridge
+            if (query.get("connectorbridge") != null) {
+                System.out.println("Restarting Connector Bridge...");
+                this.executeScript("restartConnectorBridge.sh");
             }
             
             // initialize the response
@@ -685,7 +685,7 @@ public class MDSConfiguratorApp
             html = this.displayDeviceServerCredentials(html);
             html = this.displayCoAPMediaTypesConfig(html);
             html = this.displayLoggingConfig(html);
-            html = this.displayMQTTGWConfig(html);
+            html = this.displayConnectorBridgeConfig(html);
             html = this.displayConfiguratorConfig(html);
             
             // update DIV's for tables that need to be hidden
