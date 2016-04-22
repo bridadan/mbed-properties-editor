@@ -12,11 +12,13 @@ import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.URLDecoder;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -148,7 +150,6 @@ public class MDSConfiguratorApp
         /**
          * Open Properties and read in from properties file
          */
-        @SuppressWarnings("empty-statement")
         private Properties getProperties(Properties prop,String filename) {
             InputStream input = null;
             try {
@@ -169,7 +170,6 @@ public class MDSConfiguratorApp
                 }
                 catch (IOException ioex) {
                     // silent
-                    ;
                 }
             }
             return prop;
@@ -636,32 +636,32 @@ public class MDSConfiguratorApp
                 
                 // mDS Configuration
                 if (file.equalsIgnoreCase("deviceserver.properties")) {
-                    this.updateDeviceServerConfiguration(query.get("updated_key"), query.get("updated_value"), file);
+                    this.updateDeviceServerConfiguration(query.get("updated_key"),this.safeDecode(query.get("updated_value")), file);
                 }
                 
                 // mDS Credentials
                 if (file.equalsIgnoreCase("credentials.properties")) {
-                    this.updateDeviceServerCredentials(query.get("updated_key"), query.get("updated_value"), file, query.get("new_key"));
+                    this.updateDeviceServerCredentials(query.get("updated_key"), this.safeDecode(query.get("updated_value")), file, query.get("new_key"));
                 }
                 
                 // HTTP CoAP Media Types
                 if (file.equalsIgnoreCase("http-coap-mediatypes.properties")) {
-                    this.updateHTTPCoAPMediaTypes(query.get("updated_key"), query.get("updated_value"), file);
+                    this.updateHTTPCoAPMediaTypes(query.get("updated_key"), this.safeDecode(query.get("updated_value")), file);
                 }
                 
                 // Logging Configuration
                 if (file.equalsIgnoreCase("log4j.properties")) {
-                    this.updateLoggingConfiguration(query.get("updated_key"), query.get("updated_value"), file);
+                    this.updateLoggingConfiguration(query.get("updated_key"), this.safeDecode(query.get("updated_value")), file);
                 }
                 
                 // CB Bridge Configuration
                 if (file.equalsIgnoreCase("gateway.properties")) {
-                    this.updateCBGWConfiguration(query.get("updated_key"), query.get("updated_value"), file , query.get("new_key"));
+                    this.updateCBGWConfiguration(query.get("updated_key"), this.safeDecode(query.get("updated_value")), file , query.get("new_key"));
                 }
                 
                 // Configurator Configuration
                 if (file.equalsIgnoreCase("configurator.properties")) {
-                    this.updateConfiguratorConfiguration(query.get("updated_key"), query.get("updated_value"), file);
+                    this.updateConfiguratorConfiguration(query.get("updated_key"), this.safeDecode(query.get("updated_value")), file);
                 }
             }
             
@@ -742,6 +742,114 @@ public class MDSConfiguratorApp
         @Override
         public boolean checkCredentials(String user, String pwd) {
             return user.equals(getProperty("admin_username")) && pwd.equals(getProperty("admin_password"));
+        }
+        
+        // decode a URL-safe string
+        private String safeDecode(String encoded_str) {
+            try {
+                System.out.println("Decoding: " + encoded_str);
+                String tmp = URLDecoder.decode(encoded_str,"UTF-8");
+                return new String(this.decode(tmp),"UTF-8");
+            }
+            catch (Exception ex) {
+                System.out.println("EXCEPTION Decoding: " + encoded_str + " Message: " + ex.getMessage());
+                return encoded_str;
+            }
+        }
+        
+        // Local Base64 Encode - Author/Credit: https://gist.github.com/EmilHernvall/953733
+        private String encode(byte[] data)
+        {
+            char[] tbl = {
+                'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P',
+                'Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f',
+                'g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v',
+                'w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/' };
+
+            StringBuilder buffer = new StringBuilder();
+            int pad = 0;
+            for (int i = 0; i < data.length; i += 3) {
+
+                int b = ((data[i] & 0xFF) << 16) & 0xFFFFFF;
+                if (i + 1 < data.length) {
+                    b |= (data[i+1] & 0xFF) << 8;
+                } else {
+                    pad++;
+                }
+                if (i + 2 < data.length) {
+                    b |= (data[i+2] & 0xFF);
+                } else {
+                    pad++;
+                }
+
+                for (int j = 0; j < 4 - pad; j++) {
+                    int c = (b & 0xFC0000) >> 18;
+                    buffer.append(tbl[c]);
+                    b <<= 6;
+                }
+            }
+            for (int j = 0; j < pad; j++) {
+                buffer.append("=");
+            }
+
+            return buffer.toString();
+        }
+        
+        // Local Base64 Decode - - Author/Credit: https://gist.github.com/EmilHernvall/953733
+        private byte[] decode(String data)
+        {
+            int[] tbl = {
+                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63, 52, 53, 54,
+                55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1, -1, 0, 1, 2,
+                3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+                20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1, -1, 26, 27, 28, 29, 30,
+                31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
+                48, 49, 50, 51, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+            byte[] bytes = data.getBytes();
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            for (int i = 0; i < bytes.length; ) {
+                int b = 0;
+                if (tbl[bytes[i]] != -1) {
+                    b = (tbl[bytes[i]] & 0xFF) << 18;
+                }
+                // skip unknown characters
+                else {
+                    i++;
+                    continue;
+                }
+
+                int num = 0;
+                if (i + 1 < bytes.length && tbl[bytes[i+1]] != -1) {
+                    b = b | ((tbl[bytes[i+1]] & 0xFF) << 12);
+                    num++;
+                }
+                if (i + 2 < bytes.length && tbl[bytes[i+2]] != -1) {
+                    b = b | ((tbl[bytes[i+2]] & 0xFF) << 6);
+                    num++;
+                }
+                if (i + 3 < bytes.length && tbl[bytes[i+3]] != -1) {
+                    b = b | (tbl[bytes[i+3]] & 0xFF);
+                    num++;
+                }
+
+                while (num > 0) {
+                    int c = (b & 0xFF0000) >> 16;
+                    buffer.write((char)c);
+                    b <<= 8;
+                    num--;
+                }
+                i += 4;
+            }
+            return buffer.toByteArray();
         }
     }
     
