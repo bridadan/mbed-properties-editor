@@ -710,9 +710,9 @@ public class MDSConfiguratorApp
         
         // conditionally check and update the AWS IoT CLI creds - NOTE: sensitive to changes in the configuration file!
         private void updateAWSCreds() {
-            String region = (String)this.m_configurator_properties.get("aws_iot_region");
-            String key_id = (String)this.m_configurator_properties.get("aws_iot_access_key_id");
-            String access_key = (String)this.m_configurator_properties.get("aws_iot_secret_access_key");
+            String region = (String)this.m_mds_config_properties_updated.get("aws_iot_region");
+            String key_id = (String)this.m_mds_config_properties_updated.get("aws_iot_access_key_id");
+            String access_key = (String)this.m_mds_config_properties_updated.get("aws_iot_secret_access_key");
             
             if (region != null && region.length() > 0 && region.equalsIgnoreCase("AWS_region_goes_here") == false &&
                 key_id != null && key_id.length() > 0 && key_id.equalsIgnoreCase("AWS_Access_Key_ID_goes_here") == false && 
