@@ -715,7 +715,7 @@ public class MDSConfiguratorApp
             String access_key = (String)this.m_cb_properties.get("aws_iot_secret_access_key");
             
             // DEBUG
-            System.out.println("updateAWSCreds: region: " + region + " key_id: " + key_id + " access_key: " + access_key);
+            //System.out.println("updateAWSCreds: region: " + region + " key_id: " + key_id + " access_key: " + access_key);
             
             if (region != null && region.length() > 0 && region.equalsIgnoreCase("AWS_region_goes_here") == false &&
                 key_id != null && key_id.length() > 0 && key_id.equalsIgnoreCase("AWS_Access_Key_ID_goes_here") == false && 
@@ -725,7 +725,7 @@ public class MDSConfiguratorApp
                 String args = region + " " + key_id + " " + access_key;
                 
                 // DEBUG
-                System.out.println("updateAWSCreds: calling: set_aws_creds.sh " + args);
+                //System.out.println("updateAWSCreds: calling: set_aws_creds.sh " + args);
                 
                 // execute
                 this.executeScript("set_aws_creds.sh " + args);
