@@ -47,27 +47,28 @@ public class MDSConfiguratorApp
      * MDSConfigurator - the primary class implementing MDSConfiguratorApp
      */
     static class MDSConfigurator extends BasicAuthenticator implements HttpHandler {   
-        private static final String m_title = "mbed Services Configuration";        // Title
-        private static final int m_num_tables = 6;                                  // max number of tables shown
+        private static final String TITLE = "mbed Services Configuration";        // Title
+        private static final int NUM_TABLES = 7;                                  // max number of tables shown
         
-        private static final String m_div_hider_tag = "__HIDE_TABLE_";              // DIV hiding table tag
-        private static final String m_div_hide = "div#__NAME__ { display: none; }"; // DIV hide directive template
+        private static final String DIV_HIDER_TAG = "__HIDE_TABLE_";              // DIV hiding table tag
+        private static final String DIV_HIDE = "div#__NAME__ { display: none; }"; // DIV hide directive template
         
-        private static final String m_scripts_root = "./scripts/";                  // directory relative to jar file for scripts...
-        private static final String m_config_files_root = "/conf/";                 // directory relative to jar file for config files...
-        private static final String m_templates_root = "/templates/";               // directory relative to jar file for html templates...
+        private static final String SCRIPTS_ROOT = "./scripts/";                  // directory relative to jar file for scripts...
+        private static final String CONFIG_FILES_ROOT = "/conf/";                 // directory relative to jar file for config files...
+        private static final String TEMPLATES_ROOT = "/templates/";               // directory relative to jar file for html templates...
         
-        private static final int m_extra_slots = 5;                                 // number of extra slots to insert into UI for new config entries
-        private static final String m_empty_slot_key = "unused";                    // empty slot key
-        private static final String m_empty_slot_value = "unused";                  // empty slot value
+        private static final int DEFAULT_EXTRA_SLOTS = 5;                         // number of extra slots to insert into UI for new config entries
+        private static final String DEFAULT_EMPTY_SLOT_KEY = "unused";            // empty slot key
+        private static final String DEFAULT_EMPTY_SLOT_VALUE = "unused";          // empty slot value
         
-        private final Properties m_mds_config_properties;                     // mDS Properties
-        private final Properties m_mds_creds_properties;                      // mDS Credential Properties
-        private final Properties m_http_coap_media_types_properties;          // HTTP CoAP Media Types Properties
-        private final Properties m_logging_properties;                        // Logging Properties
-        private final Properties m_cb_properties;                        // CB Bridge Properties
-        private final Properties m_mds_config_properties_updated;             // mDS Updated Properties (deltas)
-        private final Properties m_configurator_properties;                   // mDSConfigurator App (self) properties
+        private final Properties m_mds_config_properties;                         // mDS Properties
+        private final Properties m_mds_creds_properties;                          // mDS Credential Properties
+        private final Properties m_http_coap_media_types_properties;              // HTTP CoAP Media Types Properties
+        private final Properties m_logging_properties;                            // Logging Properties
+        private final Properties m_connector_bridge_properties;                   // Connector Bridge Properties
+        private final Properties m_shadow_service_properties;                     // Shadow Service Properties
+        private final Properties m_mds_config_properties_updated;                 // mDS Updated Properties (deltas)
+        private final Properties m_configurator_properties;                       // mDSConfigurator App (self) properties
         
         /**
          * Default Constructor
@@ -78,7 +79,8 @@ public class MDSConfiguratorApp
             this.m_mds_creds_properties = new Properties();
             this.m_http_coap_media_types_properties = new Properties();
             this.m_logging_properties = new Properties();
-            this.m_cb_properties = new Properties();
+            this.m_connector_bridge_properties = new Properties();
+            this.m_shadow_service_properties = new Properties();
             this.m_mds_config_properties_updated = new Properties();
             this.m_configurator_properties = new Properties();
         }
@@ -93,7 +95,7 @@ public class MDSConfiguratorApp
             
             try {
                 String current = new java.io.File( "." ).getCanonicalPath();
-                String fq_filename = current + MDSConfigurator.m_templates_root + filename;
+                String fq_filename = current + MDSConfigurator.TEMPLATES_ROOT + filename;
                 input = new FileInputStream(fq_filename);
                 Reader reader = new BufferedReader(new InputStreamReader(input));
                 StringBuilder builder = new StringBuilder();
@@ -126,7 +128,7 @@ public class MDSConfiguratorApp
             html += this.fileToString("editor.html");
             
             // update some of the key variables
-            html = html.replace("__TITLE__",MDSConfigurator.m_title);
+            html = html.replace("__TITLE__",MDSConfigurator.TITLE);
             
             // return the html
             return html;
@@ -153,7 +155,7 @@ public class MDSConfiguratorApp
         private Properties getProperties(Properties prop,String filename) {
             InputStream input = null;
             try {
-                String fq_filename = this.getWorkingDirectory() + MDSConfigurator.m_config_files_root + filename;
+                String fq_filename = this.getWorkingDirectory() + MDSConfigurator.CONFIG_FILES_ROOT + filename;
                 //System.out.println("Opening File: " + fq_filename);
                 input = new FileInputStream(fq_filename);
                 prop.clear();
@@ -289,8 +291,8 @@ public class MDSConfiguratorApp
          * Add some empty configuration slots in the configuration table for adding new config entries
          */
         private void addEmptyConfigSlots(Properties props) {
-            for(int i=0;i<MDSConfigurator.m_extra_slots;++i) {
-                Object put = props.put(MDSConfigurator.m_empty_slot_key + "-" + (i+1),MDSConfigurator.m_empty_slot_value);
+            for(int i=0;i<MDSConfigurator.DEFAULT_EXTRA_SLOTS;++i) {
+                Object put = props.put(MDSConfigurator.DEFAULT_EMPTY_SLOT_KEY + "-" + (i+1),MDSConfigurator.DEFAULT_EMPTY_SLOT_VALUE);
             }
         }
         
@@ -322,18 +324,28 @@ public class MDSConfiguratorApp
         }
         
         /**
-         * Display the CB Bridge properties as HTML
+         * Display the Connector Bridge properties as HTML
          */
         private String displayConnectorBridgeConfig(String html) {
-            if (this.m_cb_properties.isEmpty()) {
-                this.getProperties(this.m_cb_properties,"gateway.properties");
-                // DISABLE: this.addEmptyConfigSlots(this.m_cb_properties);
+            if (this.m_connector_bridge_properties.isEmpty()) {
+                this.getProperties(this.m_connector_bridge_properties,"gateway.properties");
             }
-            return this.buildConfigurationTable(html,this.m_cb_properties,"gateway.properties","__CB_CONFIG_TABLE__",true,true);  // filter
+            return this.buildConfigurationTable(html,this.m_connector_bridge_properties,"gateway.properties","__CONNECTOR_BRIDGE_CONFIG_TABLE__",true,true);  // filter
         }
         
         /**
-         * Display the mDSConfigurator App (self) properties as HTML
+         * Display the Shadow Service properties as HTML
+         */
+        private String displayShadowServiceConfig(String html) {
+            if (this.m_shadow_service_properties.isEmpty()) {
+                this.getProperties(this.m_shadow_service_properties,"shadow-service.properties");
+                this.addEmptyConfigSlots(this.m_shadow_service_properties);
+            }
+            return this.buildConfigurationTable(html,this.m_shadow_service_properties,"shadow_service.properties","__SHADOW_SERVICE_CONFIG_TABLE__",true,true);  // filter
+        }
+        
+        /**
+         * Display the Configurator App Admin (self) properties as HTML
          */
         private String displayConfiguratorConfig(String html) {
             if (this.m_configurator_properties.isEmpty()) this.getProperties(this.m_configurator_properties,"configurator.properties");
@@ -345,7 +357,7 @@ public class MDSConfiguratorApp
          */
         private void updateDeviceServerConfiguration(String key,String value,String file) {
             // DEBUG
-            System.out.println("mDS Configuration: Updating " + key + " = " + value);
+            System.out.println("Device Server Configuration: Updating " + key + " = " + value);
             
             // save the updated value the preferences
             this.m_mds_config_properties_updated.put(key, value);
@@ -362,7 +374,7 @@ public class MDSConfiguratorApp
             Enumeration e = props.propertyNames();
             while (e.hasMoreElements()) {
                 String key = (String) e.nextElement();
-                if (key.contains(MDSConfigurator.m_empty_slot_key)) {
+                if (key.contains(MDSConfigurator.DEFAULT_EMPTY_SLOT_KEY)) {
                     props.remove(key);
                 }
             }
@@ -374,7 +386,7 @@ public class MDSConfiguratorApp
         private void updateExpandableConfiguration(Properties props, String key,String value,String file, String new_key) {
             if (new_key != null && new_key.equals(key) == false) {
                 // DEBUG
-                System.out.println("mDS config(new key): Setting " + new_key + " = " + value);
+                System.out.println("config(new key): Setting " + new_key + " = " + value);
                 
                 // delete the old preference
                 props.remove(key);
@@ -384,7 +396,7 @@ public class MDSConfiguratorApp
             }
             else {
                 // DEBUG
-                System.out.println("mDS config: Updating " + key + " = " + value);
+                System.out.println("config: Updating " + key + " = " + value);
 
                 // save the updated value the preferences
                 props.put(key, value);
@@ -436,26 +448,40 @@ public class MDSConfiguratorApp
         }
         
         /**
-         * Update the CB Bridge properties file
+         * Update the Connector Bridge properties file
          */
-        private void updateCBGWConfiguration(String key,String value,String file,String new_key) {
-           
-            // DISABLE this.updateExpandableConfiguration(this.m_cb_properties,key,value,file,new_key);
-            
-            // clear out the empty slots
-            // DISABLE this.clearEmptyConfigSlots(this.m_cb_properties);
-            
+        private void updateConnectorBridgeConfiguration(String key,String value,String file,String new_key) {
             // DEBUG
-            System.out.println("Logging Connector Bridge Configuration: Updating " + key + " = " + value);
+            System.out.println("Connector Bridge Configuration: Updating " + key + " = " + value);
             
             // save the updated value in preferences
-            this.m_cb_properties.put(key, value);
+            this.m_connector_bridge_properties.put(key, value);
 
             // save the file
-            this.saveCBGWConfigFile();
+            this.saveConnectorBridgeConfigFile();
+        }
+        
+        /**
+         * Update the Shadow Service properties file
+         */
+        private void updateShadowServiceConfiguration(String key,String value,String file,String new_key) {
+            // update expandable configuration
+            this.updateExpandableConfiguration(this.m_shadow_service_properties,key,value,file,new_key);
+            
+            // clear out the empty slots
+            this.clearEmptyConfigSlots(this.m_shadow_service_properties);
+            
+            // DEBUG
+            System.out.println("Shadow Service Configuration: Updating " + key + " = " + value);
+            
+            // save the updated value in preferences
+            this.m_shadow_service_properties.put(key, value);
+
+            // save the file
+            this.saveShadowServiceConfigFile();
             
             // put back the empty config slots
-            // DISABLE this.addEmptyConfigSlots(this.m_cb_properties);
+            this.addEmptyConfigSlots(this.m_shadow_service_properties);
         }
         
         /**
@@ -463,7 +489,7 @@ public class MDSConfiguratorApp
          */
         private void updateConfiguratorConfiguration(String key,String value,String file) {
             // DEBUG
-            System.out.println("Configurator Configuration: Updating " + key + " = " + value);
+            System.out.println("Configurator Admin Configuration: Updating " + key + " = " + value);
 
             // save the updated value the preferences
             this.m_configurator_properties.put(key, value);
@@ -477,8 +503,8 @@ public class MDSConfiguratorApp
          */
         private void executeScript(String script) {
             try {
-                //System.out.println("Executing: " + this.m_scripts_root + script);
-                Runtime.getRuntime().exec(MDSConfigurator.m_scripts_root + script);
+                //System.out.println("Executing: " + this.SCRIPTS_ROOT + script);
+                Runtime.getRuntime().exec(MDSConfigurator.SCRIPTS_ROOT + script);
             } catch (IOException ex) {
                 System.out.println("Exception caught: " + ex.getMessage() + " script: " + script);
             }
@@ -500,7 +526,7 @@ public class MDSConfiguratorApp
                 
             if (props.isEmpty() == false) {
                 try {
-                    String fq_filename = this.getWorkingDirectory() + MDSConfigurator.m_config_files_root + filename;
+                    String fq_filename = this.getWorkingDirectory() + MDSConfigurator.CONFIG_FILES_ROOT + filename;
                     output = new FileOutputStream(fq_filename);
                     props.store(output, comments);
                     written = true;
@@ -520,10 +546,10 @@ public class MDSConfiguratorApp
          */
         private void saveDeviceServerConfigurationFile() {
             // DEBUG
-            System.out.println("Saving mDS Configuration File...");
+            System.out.println("Saving Device Server Configuration File...");
             
             // write a new file out...
-            boolean written = this.writePropertiesFile("mDS Configuration Updates",this.m_mds_config_properties_updated, "deviceserver.properties.updated");
+            boolean written = this.writePropertiesFile("Device Server Configuration Updates",this.m_mds_config_properties_updated, "deviceserver.properties.updated");
             
             // execute the recombination script to merge with the default config file...
             if (written) this.executeScript("mergeDeviceServerConfiguration.sh");
@@ -534,10 +560,10 @@ public class MDSConfiguratorApp
          */
         private void saveDeviceServerCredentialsFile() {
             // DEBUG
-            System.out.println("Saving mDS Credentials File...");
+            System.out.println("Saving Device Server Credentials File...");
             
             // rewrite the file
-            this.writePropertiesFile("mDS Credentials Updates",this.m_mds_creds_properties, "credentials.properties");
+            this.writePropertiesFile("Device Server Credentials Updates",this.m_mds_creds_properties, "credentials.properties");
         }
         
         /**
@@ -563,14 +589,25 @@ public class MDSConfiguratorApp
         }
         
         /**
-         * Save the CB Bridge configuration file
+         * Save the Connector Bridge configuration file
          */
-        private void saveCBGWConfigFile() {
+        private void saveConnectorBridgeConfigFile() {
             // DEBUG
             System.out.println("Saving Connector Bridge Config File...");
             
             // rewrite the file
-            this.writePropertiesFile("Connector Bridge Updates",this.m_cb_properties, "gateway.properties");
+            this.writePropertiesFile("Connector Bridge Updates",this.m_connector_bridge_properties, "gateway.properties");
+        }
+        
+        /**
+         * Save the Shadow Service configuration file
+         */
+        private void saveShadowServiceConfigFile() {
+            // DEBUG
+            System.out.println("Saving Shadow Service Config File...");
+            
+            // rewrite the file
+            this.writePropertiesFile("Shadow Service Updates",this.m_shadow_service_properties, "shadow-service.properties");
         }
         
         /**
@@ -578,10 +615,10 @@ public class MDSConfiguratorApp
          */
         private void saveConfiguratorConfigFile() {
             // DEBUG
-            System.out.println("Saving Configurator Config File...");
+            System.out.println("Saving Configurator Admin Config File...");
             
             // rewrite the file
-            this.writePropertiesFile("ConfiguratorUpdates",this.m_configurator_properties, "configurator.properties");
+            this.writePropertiesFile("Configurator Admin Updates",this.m_configurator_properties, "configurator.properties");
         }
         
         /**
@@ -589,12 +626,12 @@ public class MDSConfiguratorApp
          */
         private String checkAndHideTable(String html,String div_name,String table_index,Properties table_properties) {
             // build out the TAG
-            String tag = MDSConfigurator.m_div_hider_tag + table_index + "__";
+            String tag = MDSConfigurator.DIV_HIDER_TAG + table_index + "__";
             
             // see if we have properties
             if (table_properties.isEmpty()) {
                 // hide the table via DIV...
-                String div = MDSConfigurator.m_div_hide.replace("__NAME__", div_name);
+                String div = MDSConfigurator.DIV_HIDE.replace("__NAME__", div_name);
                 html = html.replace(tag, div);
             }
             else {
@@ -613,8 +650,9 @@ public class MDSConfiguratorApp
             html = this.checkAndHideTable(html,"ds_creds_table","2",this.m_mds_creds_properties);
             html = this.checkAndHideTable(html,"http_coap_media_table","3",this.m_http_coap_media_types_properties);
             html = this.checkAndHideTable(html,"logging_table","4",this.m_logging_properties);
-            html = this.checkAndHideTable(html,"cb_config_table","5",this.m_cb_properties);
-            html = this.checkAndHideTable(html,"configurator_config_table","6",this.m_configurator_properties);
+            html = this.checkAndHideTable(html,"cb_config_table","5",this.m_connector_bridge_properties);
+            html = this.checkAndHideTable(html,"shadow_service_config_table","6",this.m_shadow_service_properties);
+            html = this.checkAndHideTable(html,"configurator_config_table","7",this.m_configurator_properties);
             return html;
         }
         
@@ -654,9 +692,14 @@ public class MDSConfiguratorApp
                     this.updateLoggingConfiguration(query.get("updated_key"), this.safeDecode(query.get("updated_value")), file);
                 }
                 
-                // CB Bridge Configuration
+                // Connector Bridge Configuration
                 if (file.equalsIgnoreCase("gateway.properties")) {
-                    this.updateCBGWConfiguration(query.get("updated_key"), this.safeDecode(query.get("updated_value")), file , query.get("new_key"));
+                    this.updateConnectorBridgeConfiguration(query.get("updated_key"), this.safeDecode(query.get("updated_value")), file , query.get("new_key"));
+                }
+                
+                // Shadow Service Configuration
+                if (file.equalsIgnoreCase("shadow-service.properties")) {
+                    this.updateShadowServiceConfiguration(query.get("updated_key"), this.safeDecode(query.get("updated_value")), file , query.get("new_key"));
                 }
                 
                 // Configurator Configuration
@@ -685,6 +728,13 @@ public class MDSConfiguratorApp
                 this.executeScript("restartConnectorBridge.sh");
             }
             
+            // restart Shadow Service
+            if (query.get("shadowservice") != null) {
+                // then restart the bridge
+                System.out.println("Restarting Shadow Service...");
+                this.executeScript("restartShadowService.sh");
+            }
+            
             // initialize the response
             html = this.initializeResponse(html);
 
@@ -710,9 +760,9 @@ public class MDSConfiguratorApp
         
         // conditionally check and update the AWS IoT CLI creds - NOTE: sensitive to changes in the configuration file!
         private void updateAWSCreds() {
-            String region = (String)this.m_cb_properties.get("aws_iot_region");
-            String key_id = (String)this.m_cb_properties.get("aws_iot_access_key_id");
-            String access_key = (String)this.m_cb_properties.get("aws_iot_secret_access_key");
+            String region = (String)this.m_connector_bridge_properties.get("aws_iot_region");
+            String key_id = (String)this.m_connector_bridge_properties.get("aws_iot_access_key_id");
+            String access_key = (String)this.m_connector_bridge_properties.get("aws_iot_secret_access_key");
             
             // DEBUG
             //System.out.println("updateAWSCreds: region: " + region + " key_id: " + key_id + " access_key: " + access_key);
