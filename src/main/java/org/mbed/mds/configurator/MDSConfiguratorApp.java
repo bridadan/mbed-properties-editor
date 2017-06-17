@@ -341,7 +341,7 @@ public class MDSConfiguratorApp
                 this.getProperties(this.m_shadow_service_properties,"shadow-service.properties");
                 this.addEmptyConfigSlots(this.m_shadow_service_properties);
             }
-            return this.buildConfigurationTable(html,this.m_shadow_service_properties,"shadow_service.properties","__SHADOW_SERVICE_CONFIG_TABLE__",true,true);  // filter
+            return this.buildConfigurationTable(html,this.m_shadow_service_properties,"shadow-service.properties","__SHADOW_SERVICE_CONFIG_TABLE__",true,true);  // filter
         }
         
         /**
@@ -730,7 +730,7 @@ public class MDSConfiguratorApp
             
             // restart Shadow Service
             if (query.get("shadowservice") != null) {
-                // then restart the bridge
+                // then restart the shadow service
                 System.out.println("Restarting Shadow Service...");
                 this.executeScript("restartShadowService.sh");
             }
@@ -744,6 +744,7 @@ public class MDSConfiguratorApp
             html = this.displayCoAPMediaTypesConfig(html);
             html = this.displayLoggingConfig(html);
             html = this.displayConnectorBridgeConfig(html);
+            html = this.displayShadowServiceConfig(html);
             html = this.displayConfiguratorConfig(html);
             
             // update DIV's for tables that need to be hidden
