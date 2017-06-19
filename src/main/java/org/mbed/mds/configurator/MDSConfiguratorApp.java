@@ -18,6 +18,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
@@ -47,28 +48,36 @@ public class MDSConfiguratorApp
      * MDSConfigurator - the primary class implementing MDSConfiguratorApp
      */
     static class MDSConfigurator extends BasicAuthenticator implements HttpHandler {   
-        private static final String TITLE = "mbed Services Configuration";        // Title
-        private static final int NUM_TABLES = 7;                                  // max number of tables shown
+        private static final String DEFAULT_CONFIG = "mds";                             // Default Config
+        private static final String DEFAULT_TITLE = "Configuration";                    // Default Title
+        private static final int DEFAULT_NUM_TABLES = 7;                                // Default max number of tables shown
         
-        private static final String DIV_HIDER_TAG = "__HIDE_TABLE_";              // DIV hiding table tag
-        private static final String DIV_HIDE = "div#__NAME__ { display: none; }"; // DIV hide directive template
+        private static final String DIV_HIDER_TAG = "__HIDE_TABLE_";                    // DIV hiding table tag
+        private static final String DIV_HIDE = "div#__NAME__ { display: none; }";       // DIV hide directive template
         
-        private static final String SCRIPTS_ROOT = "./scripts/";                  // directory relative to jar file for scripts...
-        private static final String CONFIG_FILES_ROOT = "/conf/";                 // directory relative to jar file for config files...
-        private static final String TEMPLATES_ROOT = "/templates/";               // directory relative to jar file for html templates...
+        private static final String SCRIPTS_ROOT = "./scripts/";                        // directory relative to jar file for scripts...
+        private static final String CONFIG_FILES_ROOT = "/conf/";                       // directory relative to jar file for config files...
+        private static final String TEMPLATES_ROOT = "/templates/";                     // directory relative to jar file for html templates...
         
-        private static final int DEFAULT_EXTRA_SLOTS = 5;                         // number of extra slots to insert into UI for new config entries
-        private static final String DEFAULT_EMPTY_SLOT_KEY = "unused";            // empty slot key
-        private static final String DEFAULT_EMPTY_SLOT_VALUE = "unused";          // empty slot value
+        private static final int DEFAULT_EXTRA_SLOTS = 1;                               // number of extra slots to insert into UI for new config entries
+        private static final String DEFAULT_EMPTY_SLOT_KEY = "unused";                  // empty slot key
+        private static final String DEFAULT_EMPTY_SLOT_VALUE = "unused";                // empty slot value
         
-        private final Properties m_mds_config_properties;                         // mDS Properties
-        private final Properties m_mds_creds_properties;                          // mDS Credential Properties
-        private final Properties m_http_coap_media_types_properties;              // HTTP CoAP Media Types Properties
-        private final Properties m_logging_properties;                            // Logging Properties
-        private final Properties m_connector_bridge_properties;                   // Connector Bridge Properties
-        private final Properties m_shadow_service_properties;                     // Shadow Service Properties
-        private final Properties m_mds_config_properties_updated;                 // mDS Updated Properties (deltas)
-        private final Properties m_configurator_properties;                       // mDSConfigurator App (self) properties
+        private final Properties m_mds_config_properties;                               // mDS Properties
+        private final Properties m_mds_creds_properties;                                // mDS Credential Properties
+        private final Properties m_http_coap_media_types_properties;                    // HTTP CoAP Media Types Properties
+        private final Properties m_logging_properties;                                  // Logging Properties
+        private final Properties m_connector_bridge_properties;                         // Connector Bridge Properties
+        private final Properties m_shadow_service_properties;                           // Shadow Service Properties
+        private final Properties m_mds_config_properties_updated;                       // mDS Updated Properties (deltas)
+        private final Properties m_configurator_properties;                             // mDSConfigurator App (self) properties
+        
+        private String m_editor = null;
+        private String m_title = DEFAULT_TITLE;                                         // our title
+        private String m_config = DEFAULT_CONFIG;                                       // our configuration type
+        private int m_max_tables = DEFAULT_NUM_TABLES;                                  // max number of tables
+        private String m_configurator_config_fields = null;                             // config_fields (self)
+        private String m_config_fields = null;                                          // config_fields option
         
         /**
          * Default Constructor
@@ -125,10 +134,10 @@ public class MDSConfiguratorApp
             html += this.fileToString("scripts.html");
             
             // add the table templates/editor page
-            html += this.fileToString("editor.html");
+            html += this.fileToString(this.m_editor);
             
             // update some of the key variables
-            html = html.replace("__TITLE__",MDSConfigurator.TITLE);
+            html = html.replace("__TITLE__",this.m_title);
             
             // return the html
             return html;
@@ -161,6 +170,9 @@ public class MDSConfiguratorApp
                 prop.clear();
                 prop.load(input);
                 input.close();
+                
+                // provide some defaults
+                this.m_config_fields = prop.getProperty("config_fields",null);
             }
             catch (IOException ex) {
                 System.out.println("Exception during Reading Properties File: " + ex.getMessage());
@@ -176,27 +188,61 @@ public class MDSConfiguratorApp
             }
             return prop;
         }
-            
-        private boolean showField(Properties props,String key) {
-            boolean show = false;
-            if (props != null && props.isEmpty() == false && key != null && key.length() > 0) {
-                String fields = props.getProperty("config_fields");
-                if (fields != null && fields.length() > 0 && props != null) {
-                    String[] shown = fields.split(";");
-                    for(int i=0;i<shown.length && !show;++i) {
-                        if (key.equalsIgnoreCase(shown[i])) {
-                            show = true;
-                        }
-                    }
-                }
+        
+        // config_fields being used
+        private boolean configFieldsEnabled() {
+            return !(this.m_config_fields == null);
+        }
+        
+        // get the config_fields array
+        private String[] getConfigFields(String config_fields) {
+            if (config_fields != null && config_fields.length() > 0 && config_fields.contains(";") == true) {
+                return config_fields.split(";");
             }
-            return show;
+            return new String[0];
         }
         
         /**
          * Build out the HTML table representing the properties file 
          */
-        private String createConfigTableAsHTML(Properties props,String file, boolean editable_key,boolean do_filter) {
+        private String createConfigTableAsHTMLFiltered(Properties props,String file, boolean editable_key,String config_fields) {
+            // start the table
+            String table = "<table border=\"0\">";
+            boolean shown = true;
+            
+            // enumerate through the properties and fill the table
+            String[] fields_to_show = this.getConfigFields(config_fields);
+            for(int i=0;i<fields_to_show.length;++i) {
+                String key = fields_to_show[i];
+                table += "<tr>";
+
+                // Key
+                if (editable_key)
+                    table += "<td id=\"" + key + "-key\" contenteditable=\"true\">" + key + "</td>";
+                else
+                    table += "<td id=\"" + key + "-key\" contenteditable=\"false\">" + key + "</td>";
+
+                // Value
+                String value = props.getProperty(key);               
+                table += "<td id=\"" + key + "\" contenteditable=\"true\" align=\"left\" height=\"" + "auto" + "\" width=\"" + "auto" + "\">" + value + "</td>";
+                String save_button = "<button name=\"save_button\" value=\"" + key + "\" type=\"button\" onclick=saveData('" + key + "','" + file + "') style=\"height:35px;width:80px\">SAVE</button>";
+                table += "<td align=\"center\" height=\"35px\" width=\"210px\">" + save_button + "</td>";
+
+                // finish row
+                table += "</tr>";
+            }
+            
+            // add the trailing tag
+            table += "</table>";
+                        
+            // return the table
+            return table;
+        }
+        
+        /**
+         * Build out the HTML table representing the properties file 
+         */
+        private String createConfigTableAsHTMLNoFilter(Properties props,String file, boolean editable_key) {
             // start the table
             String table = "<table border=\"0\">";
             boolean shown = true;
@@ -205,25 +251,22 @@ public class MDSConfiguratorApp
             Enumeration e = props.propertyNames();
             while (e.hasMoreElements()) {
                 String key = (String) e.nextElement();
-                if (do_filter) shown = this.showField(props,key);
-                if (shown) {
-                    table += "<tr>";
+                table += "<tr>";
 
-                    // Key
-                    if (editable_key)
-                        table += "<td id=\"" + key + "-key\" contenteditable=\"true\">" + key + "</td>";
-                    else
-                        table += "<td id=\"" + key + "-key\" contenteditable=\"false\">" + key + "</td>";
+                // Key
+                if (editable_key)
+                    table += "<td id=\"" + key + "-key\" contenteditable=\"true\">" + key + "</td>";
+                else
+                    table += "<td id=\"" + key + "-key\" contenteditable=\"false\">" + key + "</td>";
 
-                    // Value
-                    String value = props.getProperty(key);               
-                    table += "<td id=\"" + key + "\" contenteditable=\"true\" align=\"left\" height=\"" + "auto" + "\" width=\"" + "auto" + "\">" + value + "</td>";
-                    String save_button = "<button name=\"save_button\" value=\"" + key + "\" type=\"button\" onclick=saveData('" + key + "','" + file + "') style=\"height:35px;width:80px\">SAVE</button>";
-                    table += "<td align=\"center\" height=\"35px\" width=\"210px\">" + save_button + "</td>";
+                // Value
+                String value = props.getProperty(key);               
+                table += "<td id=\"" + key + "\" contenteditable=\"true\" align=\"left\" height=\"" + "auto" + "\" width=\"" + "auto" + "\">" + value + "</td>";
+                String save_button = "<button name=\"save_button\" value=\"" + key + "\" type=\"button\" onclick=saveData('" + key + "','" + file + "') style=\"height:35px;width:80px\">SAVE</button>";
+                table += "<td align=\"center\" height=\"35px\" width=\"210px\">" + save_button + "</td>";
 
-                    // finish row
-                    table += "</tr>";
-                }
+                // finish row
+                table += "</tr>";
             }
             
             // add the trailing tag
@@ -236,23 +279,25 @@ public class MDSConfiguratorApp
         /**
          * Build out the configuration table (properties from a properties file) as HTML content
          */
-        private String buildConfigurationTable(String html,Properties props,String file,String key) { 
-            return this.buildConfigurationTable(html, props, file, key, false, false);
+        private String buildConfigurationTable(String html,Properties props,String file,String key,String config_fields) { 
+            return this.buildConfigurationTable(html, props, file, key, false,config_fields);
         }
         
         /**
          * Build out the configuration table (properties from a properties file) as HTML content
          */
-        private String buildConfigurationTable(String html,Properties props,String file,String key,boolean do_filter) { 
-            return this.buildConfigurationTable(html, props, file, key, false,do_filter);
-        }
-        
-        /**
-         * Build out the configuration table (properties from a properties file) as HTML content
-         */
-        private String buildConfigurationTable(String html,Properties props,String file,String key,boolean editable_key,boolean do_filter) {            
-            // create the actual configuration table has HTML
-            String preference_table = this.createConfigTableAsHTML(props,file,editable_key,do_filter);
+        private String buildConfigurationTable(String html,Properties props,String file,String key,boolean editable_key,String config_fields) {
+            String preference_table = "";
+            
+            // see if we have config_fields enabled... if we do, we filter and order based on that...
+            if (this.configFieldsEnabled() == true) {
+                // create the actual configuration table has HTML
+                preference_table = this.createConfigTableAsHTMLFiltered(props,file,editable_key,config_fields);
+            }
+            else {
+                // create the actual configuration table has HTML
+                preference_table = this.createConfigTableAsHTMLNoFilter(props,file,editable_key);
+            }
             
             // fill in the body
             html = html.replace(key,preference_table);
@@ -284,7 +329,7 @@ public class MDSConfiguratorApp
          */
         private String displayDeviceServerProperties(String html) {
             if (this.m_mds_config_properties.isEmpty()) this.getProperties(this.m_mds_config_properties,"deviceserver.properties");
-            return this.buildConfigurationTable(html,this.m_mds_config_properties,"deviceserver.properties","__DS_CONFIG_TABLE__");
+            return this.buildConfigurationTable(html,this.m_mds_config_properties,"deviceserver.properties","__DS_CONFIG_TABLE__",true,this.m_config_fields);
         }
         
         /**
@@ -304,7 +349,7 @@ public class MDSConfiguratorApp
                 this.getProperties(this.m_mds_creds_properties,"credentials.properties");
                 // DISABLE: this.addEmptyConfigSlots(this.m_mds_creds_properties);
             }
-            return this.buildConfigurationTable(html,this.m_mds_creds_properties,"credentials.properties","__DS_CREDS_TABLE__",true);
+            return this.buildConfigurationTable(html,this.m_mds_creds_properties,"credentials.properties","__DS_CREDS_TABLE__",true,this.m_config_fields);              
         }
         
         /**
@@ -312,7 +357,7 @@ public class MDSConfiguratorApp
          */
         private String displayCoAPMediaTypesConfig(String html) {
             if (this.m_http_coap_media_types_properties.isEmpty()) this.getProperties(this.m_http_coap_media_types_properties,"http-coap-mediatypes.properties");
-            return this.buildConfigurationTable(html,this.m_http_coap_media_types_properties,"http-coap-mediatypes.properties","__COAP_MEDIA_TYPE_TABLE__");
+            return this.buildConfigurationTable(html,this.m_http_coap_media_types_properties,"http-coap-mediatypes.properties","__COAP_MEDIA_TYPE_TABLE__",this.m_config_fields);
         }
         
         /**
@@ -320,7 +365,7 @@ public class MDSConfiguratorApp
          */
         private String displayLoggingConfig(String html) {
             if (this.m_logging_properties.isEmpty()) this.getProperties(this.m_logging_properties,"log4j.properties");
-            return this.buildConfigurationTable(html,this.m_logging_properties,"log4j.properties","__LOGGING_CONFIG_TABLE__");
+            return this.buildConfigurationTable(html,this.m_logging_properties,"log4j.properties","__LOGGING_CONFIG_TABLE__",this.m_config_fields);
         }
         
         /**
@@ -330,7 +375,7 @@ public class MDSConfiguratorApp
             if (this.m_connector_bridge_properties.isEmpty()) {
                 this.getProperties(this.m_connector_bridge_properties,"gateway.properties");
             }
-            return this.buildConfigurationTable(html,this.m_connector_bridge_properties,"gateway.properties","__CONNECTOR_BRIDGE_CONFIG_TABLE__",true,true);  // filter
+            return this.buildConfigurationTable(html,this.m_connector_bridge_properties,"gateway.properties","__CONNECTOR_BRIDGE_CONFIG_TABLE__",true,this.m_config_fields);  
         }
         
         /**
@@ -341,7 +386,7 @@ public class MDSConfiguratorApp
                 this.getProperties(this.m_shadow_service_properties,"shadow-service.properties");
                 this.addEmptyConfigSlots(this.m_shadow_service_properties);
             }
-            return this.buildConfigurationTable(html,this.m_shadow_service_properties,"shadow-service.properties","__SHADOW_SERVICE_CONFIG_TABLE__",true,true);  // filter
+            return this.buildConfigurationTable(html,this.m_shadow_service_properties,"shadow-service.properties","__SHADOW_SERVICE_CONFIG_TABLE__",true,this.m_config_fields);
         }
         
         /**
@@ -349,7 +394,7 @@ public class MDSConfiguratorApp
          */
         private String displayConfiguratorConfig(String html) {
             if (this.m_configurator_properties.isEmpty()) this.getProperties(this.m_configurator_properties,"configurator.properties");
-            return this.buildConfigurationTable(html,this.m_configurator_properties,"configurator.properties","__CONFIGURATOR_CONFIG_TABLE__");
+            return this.buildConfigurationTable(html,this.m_configurator_properties,"configurator.properties","__CONFIGURATOR_CONFIG_TABLE__",this.m_configurator_config_fields);
         }
         
         /**
@@ -789,6 +834,31 @@ public class MDSConfiguratorApp
          */
         public void loadProperties(String filename) {
             this.getProperties(this.m_configurator_properties, filename);
+            
+            // establish defaults
+            this.m_title = this.getProperty("title");
+            this.m_config = this.getProperty("config");
+            this.m_max_tables = this.getIntProperty("max_tables");
+            this.m_configurator_config_fields = this.getProperty("config_fields");
+            
+            // default editor.html is the full one
+            this.m_editor = this.getProperty("full_editor");
+            
+            // determine which config drives which editor.html
+            if (this.m_config != null && this.m_config.equalsIgnoreCase("connector-bridge")) {
+                // DEBUG
+                System.out.println("Configurator: Switching to Connector-Bridge configuration...");
+                
+                // connector-bridge editor.html
+                this.m_editor = this.getProperty("cb_editor");
+            }
+            if (this.m_config != null && this.m_config.equalsIgnoreCase("shadow-service")) {
+                // DEBUG
+                System.out.println("Configurator: Switching to Shadow-Service configuration...");
+                
+                // shadow-service editor.html
+                this.m_editor = this.getProperty("ss_editor");
+            }
         }
         
         /**
@@ -797,7 +867,11 @@ public class MDSConfiguratorApp
          * @return - the property value if found, NULL otherwise
          */
         public String getProperty(String key) {
-            return (String)this.m_configurator_properties.get(key);
+            String prop = (String)this.m_configurator_properties.get(key);
+            if (prop != null && prop.length() > 0) {
+                return prop;
+            }
+            return null;
         }
         
         /**
@@ -834,7 +908,7 @@ public class MDSConfiguratorApp
                 String tmp = URLDecoder.decode(encoded_str,"UTF-8");
                 return new String(this.decode(tmp),"UTF-8");
             }
-            catch (Exception ex) {
+            catch (UnsupportedEncodingException ex) {
                 System.out.println("EXCEPTION Decoding: " + encoded_str + " Message: " + ex.getMessage());
                 return encoded_str;
             }
