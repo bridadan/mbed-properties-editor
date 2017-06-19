@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.mbed.example.webapp</groupId>
-  <artifactId>mdsConfigurator</artifactId>
+  <artifactId>mbedPropertiesEditor</artifactId>
   <version>1.0.0</version>
   <packaging>jar</packaging>
   
-  <name>mdsConfigurator</name>
+  <name>mbedPropertiesEditor</name>
   <url>http://maven.apache.org</url>
 
   <properties>
@@ -42,7 +42,7 @@
                 <configuration>
                   <archive>
                     <manifest>
-                        <mainClass>org.mbed.mds.configurator.MDSConfiguratorApp</mainClass>
+                        <mainClass>com.arm.mbed.properties.editor.Main</mainClass>
                     </manifest>
                   </archive>
                 </configuration>
