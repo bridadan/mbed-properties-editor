@@ -26,6 +26,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,7 +51,6 @@ public class MDSConfiguratorApp
     static class MDSConfigurator extends BasicAuthenticator implements HttpHandler {   
         private static final String DEFAULT_CONFIG = "mds";                             // Default Config
         private static final String DEFAULT_TITLE = "Configuration";                    // Default Title
-        private static final int DEFAULT_NUM_TABLES = 7;                                // Default max number of tables shown
         
         private static final String DIV_HIDER_TAG = "__HIDE_TABLE_";                    // DIV hiding table tag
         private static final String DIV_HIDE = "div#__NAME__ { display: none; }";       // DIV hide directive template
@@ -59,9 +59,8 @@ public class MDSConfiguratorApp
         private static final String CONFIG_FILES_ROOT = "/conf/";                       // directory relative to jar file for config files...
         private static final String TEMPLATES_ROOT = "/templates/";                     // directory relative to jar file for html templates...
         
-        private static final int DEFAULT_EXTRA_SLOTS = 1;                               // number of extra slots to insert into UI for new config entries
-        private static final String DEFAULT_EMPTY_SLOT_KEY = "unused";                  // empty slot key
-        private static final String DEFAULT_EMPTY_SLOT_VALUE = "unused";                // empty slot value
+        private static final String DEFAULT_EMPTY_SLOT_KEY = "New_Key_Goes_Here";       // empty slot key
+        private static final String DEFAULT_EMPTY_SLOT_VALUE = "New_Value_Goes_Here";   // empty slot value
         
         private final Properties m_mds_config_properties;                               // mDS Properties
         private final Properties m_mds_creds_properties;                                // mDS Credential Properties
@@ -75,9 +74,12 @@ public class MDSConfiguratorApp
         private String m_editor = null;
         private String m_title = DEFAULT_TITLE;                                         // our title
         private String m_config = DEFAULT_CONFIG;                                       // our configuration type
-        private int m_max_tables = DEFAULT_NUM_TABLES;                                  // max number of tables
         private String m_configurator_config_fields = null;                             // config_fields (self)
         private String m_config_fields = null;                                          // config_fields option
+        private boolean m_extendable_config = false;                                    // config is extenable (default is FALSE)
+        
+        // Shadow Service is currently the only option where extended config fields are utilized
+        private ArrayList<String> m_ss_extended_config_fields = null;                   
         
         /**
          * Default Constructor
@@ -336,9 +338,8 @@ public class MDSConfiguratorApp
          * Add some empty configuration slots in the configuration table for adding new config entries
          */
         private void addEmptyConfigSlots(Properties props) {
-            for(int i=0;i<MDSConfigurator.DEFAULT_EXTRA_SLOTS;++i) {
-                Object put = props.put(MDSConfigurator.DEFAULT_EMPTY_SLOT_KEY + "-" + (i+1),MDSConfigurator.DEFAULT_EMPTY_SLOT_VALUE);
-            }
+            props.remove(MDSConfigurator.DEFAULT_EMPTY_SLOT_KEY);
+            props.put(MDSConfigurator.DEFAULT_EMPTY_SLOT_KEY,MDSConfigurator.DEFAULT_EMPTY_SLOT_VALUE);
         }
         
         /**
@@ -510,20 +511,41 @@ public class MDSConfiguratorApp
          * Update the Shadow Service properties file
          */
         private void updateShadowServiceConfiguration(String key,String value,String file,String new_key) {
-            // update expandable configuration
-            this.updateExpandableConfiguration(this.m_shadow_service_properties,key,value,file,new_key);
-            
-            // clear out the empty slots
-            this.clearEmptyConfigSlots(this.m_shadow_service_properties);
-            
-            // DEBUG
-            System.out.println("Shadow Service Configuration: Updating " + key + " = " + value);
-            
-            // save the updated value in preferences
-            this.m_shadow_service_properties.put(key, value);
+            if (key.equalsIgnoreCase(DEFAULT_EMPTY_SLOT_KEY) == true) {
+                if (new_key.equalsIgnoreCase(DEFAULT_EMPTY_SLOT_KEY) == true) {
+                    // note that you must edit the KEY as well as the value
+                    System.out.println("Shadow Service Configuration: You have to edit KEY and VALUE to add a new value to the properties list.. ignoring");
+                    
+                    // clear out the empty slots
+                    this.clearEmptyConfigSlots(this.m_shadow_service_properties);
+                }
+                else {
+                    // DEBUG
+                    System.out.println("Shadow Service Configuration: Adding new key/value entry: " + key + " = " + value);
 
+                    // update expandable configuration
+                    this.updateExpandableConfiguration(this.m_shadow_service_properties,key,value,file,new_key);
+
+                    // update the expanded config_fields list
+                    this.m_ss_extended_config_fields.add(new_key);
+                }
+                
+                // clear out the empty slots
+                this.clearEmptyConfigSlots(this.m_shadow_service_properties);
+            }
+            else {
+                // DEBUG
+                System.out.println("Shadow Service Configuration: Updating " + key + " = " + value);
+            
+                // save the updated value in preferences
+                this.m_shadow_service_properties.put(key, value);
+            }
+            
             // save the file
             this.saveShadowServiceConfigFile();
+            
+             // empty our config file additions
+            this.m_ss_extended_config_fields.clear();
             
             // put back the empty config slots
             this.addEmptyConfigSlots(this.m_shadow_service_properties);
@@ -648,6 +670,22 @@ public class MDSConfiguratorApp
          * Save the Shadow Service configuration file
          */
         private void saveShadowServiceConfigFile() {
+            // updating the config_fields for any new fields to display
+            String added_config_fields = "";
+            for(int i=0;i<this.m_ss_extended_config_fields.size();++i) {
+                added_config_fields += this.m_ss_extended_config_fields.get(i);
+                if (i < this.m_ss_extended_config_fields.size()-1) {
+                    added_config_fields += ";";
+                }
+            }
+            
+            // append to config_fields if we have made additions...put the empty one back at the end of the config_fields value...
+            if (added_config_fields.length() > 0) {
+                this.m_config_fields = this.m_config_fields.replace(DEFAULT_EMPTY_SLOT_KEY,added_config_fields);
+                this.m_config_fields += ";" + DEFAULT_EMPTY_SLOT_KEY;
+                this.m_shadow_service_properties.put(("config_fields"), this.m_config_fields);
+            }
+            
             // DEBUG
             System.out.println("Saving Shadow Service Config File...");
             
@@ -838,7 +876,6 @@ public class MDSConfiguratorApp
             // establish defaults
             this.m_title = this.getProperty("title");
             this.m_config = this.getProperty("config");
-            this.m_max_tables = this.getIntProperty("max_tables");
             this.m_configurator_config_fields = this.getProperty("config_fields");
             
             // default editor.html is the full one
@@ -858,6 +895,12 @@ public class MDSConfiguratorApp
                 
                 // shadow-service editor.html
                 this.m_editor = this.getProperty("ss_editor");
+                
+                // we have to extend this configuration
+                this.m_extendable_config = true;
+                
+                // initialize the extendable properties list
+                this.m_ss_extended_config_fields = new ArrayList<String>();
             }
         }
         
