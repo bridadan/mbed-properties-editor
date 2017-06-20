@@ -2,7 +2,7 @@
 
 run_properties_editor() {
     cd ${HOME}/properties-editor
-    java -jar ./target/mbedPropertiesEditor-1.0.0.jar
+    java -jar ./target/mbed-properties-editor-1.0.0.jar
 }
 
 main() {
