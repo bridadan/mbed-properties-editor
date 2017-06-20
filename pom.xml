@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.mbed.example.webapp</groupId>
-  <artifactId>mbedPropertiesEditor</artifactId>
+  <artifactId>mbed-properties-editor</artifactId>
   <version>1.0.0</version>
   <packaging>jar</packaging>
   
-  <name>mbedPropertiesEditor</name>
+  <name>mbed-properties-editor</name>
   <url>http://maven.apache.org</url>
 
   <properties>
