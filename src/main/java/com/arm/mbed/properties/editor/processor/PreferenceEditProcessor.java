@@ -58,13 +58,13 @@ public class PreferenceEditProcessor extends PreferenceEditor implements HttpHan
        html += Utils.fileToString(this.m_templates_root,"css.html");
 
        // add scripts
-       html += Utils.fileToString(this.m_templates_root,"scripts.html");
+       html += Utils.fileToString(this.m_templates_root,"scripts.html").replace("__SERVICE_NAME__", this.m_service_name);
 
        // add the table templates/editor page
-       html += Utils.fileToString(this.m_templates_root,this.m_editor);
+       html += Utils.fileToString(this.m_templates_root,this.m_editor).replace("__SERVICE_NAME__", this.m_service_name);
 
        // update some of the key variables
-       html = html.replace("__TITLE__",this.m_title);
+       html = html.replace("__TITLE__",this.m_title).replace("__SERVICE_NAME__", this.m_service_name);
 
        // return the html
        return html;

@@ -51,6 +51,7 @@ public class PreferenceEditor extends BasicAuthenticator {
    protected String m_title = DEFAULT_TITLE;                                         // our title
    protected String m_configurator_config_fields = null;                             // config_fields (self)
    protected String m_config_fields = null;                                          // config_fields option
+   protected String m_service_name = null;                                           // service name
 
    protected Properties m_properties = null;                                         // Properties to edit
    protected Properties m_editor_properties = null;                                  // EditProcessor (self) properties
@@ -94,6 +95,7 @@ public class PreferenceEditor extends BasicAuthenticator {
         this.m_templates_root = this.getProperty("templates_root");
         this.m_empty_slot_key = this.getProperty("default_key");
         this.m_empty_slot_value = this.getProperty("default_value");
+        this.m_service_name = this.getProperty("service_name");
 
         // initialize the extendable properties tmp list
         this.m_extended_config_fields = new ArrayList<String>();

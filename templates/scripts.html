@@ -18,11 +18,7 @@ function fixScrolling(elem) {
         objDiv.scrollTop = objDiv.scrollHeight;
  }
 
- function restartConnectorBridge() {     var url = window.location.protocol + "//" + window.location.host + window.location.pathname + "?connectorbridge=restart";
-     window.location = url;
- }
-
-function restartShadowService() {     var url = window.location.protocol + "//" + window.location.host + window.location.pathname + "?shadowservice=restart";
+ function restartService() {     var url = window.location.protocol + "//" + window.location.host + window.location.pathname + "?service=restart";
      window.location = url;
  }
 
