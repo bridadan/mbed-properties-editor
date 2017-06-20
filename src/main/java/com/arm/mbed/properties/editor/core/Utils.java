@@ -22,9 +22,18 @@
  */
 package com.arm.mbed.properties.editor.core;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * Static support utilities
@@ -32,6 +41,120 @@ import java.net.URLDecoder;
  * @author Doug Anson
  */
 public class Utils {
+    /**
+    * Execute a script
+     * @param root
+     * @param script
+    */
+    public static void executeScript(String root,String script) {
+        try {
+            //System.out.println("Executing: " + this.m_scripts_root + "/" + script);
+            Runtime.getRuntime().exec(root + "/" + script);
+        } 
+        catch (IOException ex) {
+            // Error
+            System.out.println("Exception caught: " + ex.getMessage() + " script: " + script);
+        }
+    }
+    
+    /**
+     * convert the QueryString to a Map<>
+     * @param query
+     * @return 
+     */
+    public static Map<String, String> queryToMap(String query){
+        Map<String, String> result = new HashMap<String, String>();
+        if (query != null && query.length() > 0) {
+            for (String param : query.split("&")) {
+                String pair[] = param.split("=");
+                if (pair.length>1) {
+                    result.put(pair[0], pair[1]);
+                }else{
+                    result.put(pair[0], "");
+                }
+            }
+        }
+        return result;
+    }
+    
+    /**
+     * Open properties and read from the properties file (FQ name)
+     * @param prop
+     * @param fq_filename
+     * @return 
+     */
+    public static Properties getPropertiesFQ(Properties prop,String fq_filename) {
+        InputStream input = null;
+        try {
+            //System.out.println("Opening File: " + fq_filename);
+            input = new FileInputStream(fq_filename);
+            prop.clear();
+            prop.load(input);
+            input.close();
+        }
+        catch (IOException ex) {
+            System.out.println("Exception during Reading Properties File: " + ex.getMessage());
+            prop.clear();
+            try {
+                if (input != null) {
+                    input.close();
+                }
+            }
+            catch (IOException ioex) {
+                // silent
+            }
+        }
+        return prop;
+    }
+    
+    /**
+     * Get the current working directory
+     * @return 
+     */
+    @SuppressWarnings("empty-statement")
+    public static String getWorkingDirectory() {
+       try {
+           return new java.io.File(".").getCanonicalPath();
+       }
+       catch (IOException ex) {
+           // silent
+           ;
+       }
+       return "./";
+    }
+    
+    /**
+     * read in file into a string
+     * @param root
+     * @param filename
+     * @return 
+    */
+   @SuppressWarnings("empty-statement")
+   public static String fileToString(String root,String filename)  {
+       String contents = "";
+       InputStream input = null;
+
+       try {
+           String current = new java.io.File( "." ).getCanonicalPath();
+           String fq_filename = current + root + filename;
+           input = new FileInputStream(fq_filename);
+           Reader reader = new BufferedReader(new InputStreamReader(input));
+           StringBuilder builder = new StringBuilder();
+           char[] buffer = new char[8192];
+           int read = 0;
+           while ((read = reader.read(buffer, 0, buffer.length)) > 0) {
+               builder.append(buffer, 0, read);
+           }
+           input.close();
+           return builder.toString();
+       }
+       catch (IOException ex) {
+           // silent
+           ;
+       }
+       return null;
+    }
+   
     // decode a URL-safe string
     public static String urlsafe_base64_decode(String encoded_str) {
        try {

@@ -17,7 +17,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManagerFactory;
-import com.arm.mbed.properties.editor.processor.EditProcessor;
+import com.arm.mbed.properties.editor.processor.PreferenceEditProcessor;
 import java.net.InetSocketAddress;
 
 /**
@@ -36,7 +36,7 @@ public class Main
      */
     public static void main(String[] args) throws Exception {
         // initialize and load the properties file...
-        EditProcessor processor = new EditProcessor();
+        PreferenceEditProcessor processor = new PreferenceEditProcessor(false);
         
         // load the properties up in the processor
         processor.loadProperties(CONFIGURATOR_PROPERTIES);
@@ -63,27 +63,27 @@ public class Main
             // setup the HTTPS context and parameters
             sslContext.init(kmf.getKeyManagers(),tmf.getTrustManagers(),null);
             server.setHttpsConfigurator( 
-                    new HttpsConfigurator(sslContext)
-                    {
-                        @Override
-                        public void configure(HttpsParameters params) {
-                            try {
-                                // initialise the SSL context
-                                SSLContext c = SSLContext.getDefault ();
-                                SSLEngine engine = c.createSSLEngine ();
-                                params.setNeedClientAuth ( false );
-                                params.setCipherSuites ( engine.getEnabledCipherSuites () );
-                                params.setProtocols ( engine.getEnabledProtocols () );
+                new HttpsConfigurator(sslContext)
+                {
+                    @Override
+                    public void configure(HttpsParameters params) {
+                        try {
+                            // initialise the SSL context
+                            SSLContext c = SSLContext.getDefault ();
+                            SSLEngine engine = c.createSSLEngine ();
+                            params.setNeedClientAuth ( false );
+                            params.setCipherSuites ( engine.getEnabledCipherSuites () );
+                            params.setProtocols ( engine.getEnabledProtocols () );
 
-                                // get the default parameters
-                                SSLParameters defaultSSLParameters = c.getDefaultSSLParameters ();
-                                params.setSSLParameters ( defaultSSLParameters );
-                            }
-                            catch ( NoSuchAlgorithmException ex ) {
-                                System.out.println("Main: Failed to create HTTPS port. Exception: " + ex.getMessage());
-                            }
+                            // get the default parameters
+                            SSLParameters defaultSSLParameters = c.getDefaultSSLParameters ();
+                            params.setSSLParameters ( defaultSSLParameters );
                         }
-                    } );
+                        catch ( NoSuchAlgorithmException ex ) {
+                            System.out.println("Main: Failed to create HTTPS port. Exception: " + ex.getMessage());
+                        }
+                    }
+                } );
                         
             // create the main context
             HttpContext context = server.createContext("/", processor);
