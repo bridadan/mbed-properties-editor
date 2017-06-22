@@ -4,7 +4,7 @@ restart_service()
 {
     cd ${HOME}/service
     ./killService.sh
-    ./runService.sh
+    ./runService.sh &
 }
 
 main()
