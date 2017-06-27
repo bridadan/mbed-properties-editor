@@ -17,7 +17,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManagerFactory;
-import com.arm.mbed.properties.editor.processor.PreferenceEditProcessor;
+import com.arm.mbed.properties.editor.processor.PropertiesEditorProcessor;
 import java.net.InetSocketAddress;
 
 /**
@@ -27,19 +27,19 @@ import java.net.InetSocketAddress;
 public class Main 
 {
     // our own configuration properties file (must be fully qualified)
-    public static final String CONFIGURATOR_PROPERTIES = "/home/arm/properties-editor/conf/configurator.properties";
+    public static final String PROPERTIES_EDITOR_DEFAULT_CONFIG = "/home/arm/properties-editor/conf/properties-editor.properties";
     
     /**
-     * Primary entry point for mDSConfigurator App (self)
+     * Primary entry point for properties-editor Application
      * @param args - command line arguments
      * @throws Exception 
      */
     public static void main(String[] args) throws Exception {
         // initialize and load the properties file...
-        PreferenceEditProcessor processor = new PreferenceEditProcessor(false);
+        PropertiesEditorProcessor processor = new PropertiesEditorProcessor(false);
         
         // load the properties up in the processor
-        processor.loadProperties(CONFIGURATOR_PROPERTIES);
+        processor.loadProperties(PROPERTIES_EDITOR_DEFAULT_CONFIG);
         
         try {
             // Create the HTTPS Server and SSL/TLS Context

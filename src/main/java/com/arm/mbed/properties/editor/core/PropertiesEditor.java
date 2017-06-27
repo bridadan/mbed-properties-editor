@@ -1,6 +1,6 @@
 /**
- * @file    PreferenceEditor.java
- * @brief Base class for a preferences editor
+ * @file    PropertiesEditor.java
+ * @brief Base class for a properties editor
  * @author Doug Anson
  * @version 1.0
  * @see
@@ -31,10 +31,10 @@ import java.util.Enumeration;
 import java.util.Properties;
 
 /**
- * Preference Editor Base Class
+ * Properties Editor Base Class
  * @author Doug Anson
  */
-public class PreferenceEditor extends BasicAuthenticator {
+public class PropertiesEditor extends BasicAuthenticator {
    private static final String DEFAULT_TITLE = "Configuration";                      // Default Title
    
    protected String m_div_hider_tag = null;                                          // DIV hiding table tag
@@ -65,7 +65,7 @@ public class PreferenceEditor extends BasicAuthenticator {
    protected String m_aws_set_creds_script = null;                                   // Special AWS creds handling script  
 
     // default constructor
-    public PreferenceEditor(String verb,boolean extendable_config) {
+    public PropertiesEditor(String verb,boolean extendable_config) {
         super(verb);
         this.m_properties = new Properties();
         this.m_editor_properties = new Properties();
@@ -73,7 +73,7 @@ public class PreferenceEditor extends BasicAuthenticator {
     }
     
     /**
-    * Load up the mDSConfigurator App (self) properties file
+    * Load up the mDSPropertiesEditor App (self) properties file
     * @param editor_config_file - name of the property editor properties file (fully qualified)
     */
     public void loadProperties(String editor_config_file) {
@@ -113,7 +113,7 @@ public class PreferenceEditor extends BasicAuthenticator {
     }
    
     /**
-    * Get a string-based property for mDSConfigurator App (self)
+    * Get a string-based property for mDSPropertiesEditor App (self)
     * @param key - name of the property
     * @return - the property value if found, NULL otherwise
     */
@@ -126,7 +126,7 @@ public class PreferenceEditor extends BasicAuthenticator {
     }
 
     /**
-     * Get an integer-based property for mDSConfigurator App (self)
+     * Get an integer-based property for mDSPropertiesEditor App (self)
      * @param key - name of the property
      * @return - the property value if found as an integer, -1 otherwise or if parsing errors occur
      */
@@ -170,11 +170,11 @@ public class PreferenceEditor extends BasicAuthenticator {
     }
     
     /**
-    * Save the mDSConfigurator App (self) configuration file
+    * Save the mDSPropertiesEditor App (self) configuration file
     */
-    protected void saveConfiguratorConfigFile() {
+    protected void savePropertiesEditorConfigFile() {
        // DEBUG
-       System.out.println("Saving Configurator Properties File...");
+       System.out.println("Saving PropertiesEditor Properties File...");
 
        // rewrite the file
        this.writePropertiesFile("Updated configurator property file",this.m_editor_properties, this.m_editor_properties_file);
