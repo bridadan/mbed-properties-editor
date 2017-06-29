@@ -45,7 +45,7 @@ public class PropertiesEditor extends BasicAuthenticator {
    protected String m_empty_slot_key = null;                                         // empty slot key
    protected String m_empty_slot_value = null;                                       // empty slot value
 
-   protected String m_editor = null;                                                 // which editor.html to use
+   protected String m_editor_file = null;                                                 // which editor.html to use
    protected String m_properties_file = null;                                        // which properties file to open an use
    protected String m_editor_properties_file = null;                                 // EditProcessor (self) properties file
    protected String m_title = DEFAULT_TITLE;                                         // our title
@@ -85,7 +85,7 @@ public class PropertiesEditor extends BasicAuthenticator {
         this.m_configurator_config_fields = this.getProperty("config_fields");
 
         // default editor.html is the full one
-        this.m_editor = this.getProperty("full_editor");
+        this.m_editor_file = this.getProperty("full_editor");
 
         // other config items
         this.m_div_hider_tag = this.getProperty("div_hider_tag");
@@ -101,7 +101,7 @@ public class PropertiesEditor extends BasicAuthenticator {
         this.m_extended_config_fields = new ArrayList<String>();
         
         // editor template and properties file
-        this.m_editor = this.getProperty("editor_template");
+        this.m_editor_file = this.getProperty("editor_template");
         this.m_properties_file = this.getProperty("properties_file");
         
         // get the accessed scripts

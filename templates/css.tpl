@@ -1,31 +1,31 @@
 <style type="text/css">
 body {
 	background: #FFF;
-	color: #000;
-	font: normal normal 12px Verdana, Geneva, Arial, Helvetica, sans-serif;
+	color: #128cab;
+	font: normal normal 12px 'Roboto', Verdana, Geneva, Arial, Helvetica, sans-serif;
 	margin: 2px;
         white-space: nowrap; 
 	padding: 0
 }
 
 table, td, tr, a {
-	color: #000;
-	font: normal normal 13px Verdana, Geneva, Arial, Helvetica, sans-serif
+	color:  #909393;
+	font: normal normal 13px 'Roboto', Verdana, Geneva, Arial, Helvetica, sans-serif
 }
 
 h1 {
-	font: normal normal 13px Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font: normal normal 13px 'Roboto', Verdana, Geneva, Arial, Helvetica, sans-serif;
 	margin: 0 0 0 0
 }
 
 h2 {
-	font: normal normal 16px Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font: normal normal 16px 'Roboto', Verdana, Geneva, Arial, Helvetica, sans-serif;
 	margin: 0 0 0 0
 }
 
 h3 {
-	font: normal normal 13px Verdana, Geneva, Arial, Helvetica, sans-serif;
-	color: #008000;
+	font: normal normal 13px 'Roboto', Verdana, Geneva, Arial, Helvetica, sans-serif;
+	color: #909393;
 	margin: 0 0 0 0
 }
 
@@ -89,12 +89,5 @@ tbody.scrollContent tr.alternateRow td {
 	border-right: none;
 	border-top: none;
 }
-
-__HIDE_TABLE_1__
-__HIDE_TABLE_2__
-__HIDE_TABLE_3__
-__HIDE_TABLE_4__
-__HIDE_TABLE_5__
-__HIDE_TABLE_6__
 
 </style>

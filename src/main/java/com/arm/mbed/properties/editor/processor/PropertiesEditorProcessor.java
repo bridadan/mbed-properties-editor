@@ -38,8 +38,16 @@ import java.util.Properties;
  * @author Doug Anson
  */
 public class PropertiesEditorProcessor extends PropertiesEditor implements HttpHandler {  
+    // Defaults
+    private static String CSS_DEFAULT_FILE = "css.html";
+    private static String SCRIPTS_DEFAULT_FILE = "scripts.html";
+    
     // the HTTP verb we respond to...
     private static String HTTP_VERB_DEFAULT = "get";
+    
+    // template files
+    private String m_css_file = null;
+    private String m_scripts_file = null;
     
     /**
      * Default Constructor
@@ -47,6 +55,16 @@ public class PropertiesEditorProcessor extends PropertiesEditor implements HttpH
      */
     public PropertiesEditorProcessor(boolean extendable_config) {
         super(PropertiesEditorProcessor.HTTP_VERB_DEFAULT,extendable_config);
+        
+        // pull in the CSS and scripts filenames
+        this.m_css_file = this.getProperty("css_template_filename");
+        if (this.m_css_file == null || this.m_css_file.length() == 0) {
+            this.m_css_file = CSS_DEFAULT_FILE;
+        }
+        this.m_scripts_file = this.getProperty("scripts_template_filename");
+        if (this.m_scripts_file == null || this.m_scripts_file.length() == 0) {
+            this.m_scripts_file = SCRIPTS_DEFAULT_FILE;
+        }
     }
 
     /**
@@ -54,13 +72,13 @@ public class PropertiesEditorProcessor extends PropertiesEditor implements HttpH
      */
     private String initializeResponse(String html) {
         // initialize the table with the CSS first
-        html += Utils.fileToString(this.m_templates_root,"css.html");
+        html += Utils.fileToString(this.m_templates_root,this.m_css_file);
 
         // add scripts
-        html += Utils.fileToString(this.m_templates_root,"scripts.html").replace("__SERVICE_NAME__", this.m_service_name);
+        html += Utils.fileToString(this.m_templates_root,this.m_scripts_file).replace("__SERVICE_NAME__", this.m_service_name);
 
         // add the table templates/editor page
-        html += Utils.fileToString(this.m_templates_root,this.m_editor).replace("__SERVICE_NAME__", this.m_service_name);
+        html += Utils.fileToString(this.m_templates_root,this.m_editor_file).replace("__SERVICE_NAME__", this.m_service_name);
 
         // update some of the key variables
         html = html.replace("__TITLE__",this.m_title).replace("__SERVICE_NAME__", this.m_service_name);
@@ -85,9 +103,9 @@ public class PropertiesEditorProcessor extends PropertiesEditor implements HttpH
 
             // Key
             if (editable_key)
-                table += "<td id=\"" + key + "-key\" contenteditable=\"true\">" + key + "</td>";
+                table += "<td id=\"" + key + "-key\" contenteditable=\"true\">" + key + "</td>&nbsp;&nbsp";
             else
-                table += "<td id=\"" + key + "-key\" contenteditable=\"false\">" + key + "</td>";
+                table += "<td id=\"" + key + "-key\" contenteditable=\"false\">" + key + "</td>&nbsp;&nbsp";
 
             // Value
             String value = props.getProperty(key);               
