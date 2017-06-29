@@ -84,8 +84,8 @@ public class PropertiesEditor extends BasicAuthenticator {
         this.m_title = this.getProperty("title");
         this.m_configurator_config_fields = this.getProperty("config_fields");
 
-        // default editor.html is the full one
-        this.m_editor_file = this.getProperty("full_editor");
+        // get our editor template
+        this.m_editor_file = this.getProperty("editor_template");
 
         // other config items
         this.m_div_hider_tag = this.getProperty("div_hider_tag");

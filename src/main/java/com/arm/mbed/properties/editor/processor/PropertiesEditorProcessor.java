@@ -39,8 +39,8 @@ import java.util.Properties;
  */
 public class PropertiesEditorProcessor extends PropertiesEditor implements HttpHandler {  
     // Defaults
-    private static String CSS_DEFAULT_FILE = "css.html";
-    private static String SCRIPTS_DEFAULT_FILE = "scripts.html";
+    private static String CSS_DEFAULT_FILE = "css.tpl";
+    private static String SCRIPTS_DEFAULT_FILE = "scripts.tpl";
     
     // the HTTP verb we respond to...
     private static String HTTP_VERB_DEFAULT = "get";
@@ -57,11 +57,11 @@ public class PropertiesEditorProcessor extends PropertiesEditor implements HttpH
         super(PropertiesEditorProcessor.HTTP_VERB_DEFAULT,extendable_config);
         
         // pull in the CSS and scripts filenames
-        this.m_css_file = this.getProperty("css_template_filename");
+        this.m_css_file = this.getProperty("css_template");
         if (this.m_css_file == null || this.m_css_file.length() == 0) {
             this.m_css_file = CSS_DEFAULT_FILE;
         }
-        this.m_scripts_file = this.getProperty("scripts_template_filename");
+        this.m_scripts_file = this.getProperty("scripts_template");
         if (this.m_scripts_file == null || this.m_scripts_file.length() == 0) {
             this.m_scripts_file = SCRIPTS_DEFAULT_FILE;
         }
