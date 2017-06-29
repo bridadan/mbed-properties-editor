@@ -90,4 +90,11 @@ tbody.scrollContent tr.alternateRow td {
 	border-top: none;
 }
 
+__HIDE_TABLE_1__
+__HIDE_TABLE_2__
+__HIDE_TABLE_3__
+__HIDE_TABLE_4__
+__HIDE_TABLE_5__
+__HIDE_TABLE_6__
+
 </style>
