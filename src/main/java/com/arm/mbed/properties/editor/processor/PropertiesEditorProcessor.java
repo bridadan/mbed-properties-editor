@@ -237,6 +237,13 @@ public class PropertiesEditorProcessor extends PropertiesEditor implements HttpH
      * Update the properties file
      */
     private void updateProperties(String key,String value,String file,String new_key) {
+        
+        // remove all new lines...
+        if (value != null) {
+            value = value.replace("\n", "").replace("\r", "");
+            value = value.trim();
+        }
+        
         if (key.equalsIgnoreCase(this.m_empty_slot_key) == true) {
             if (new_key.equalsIgnoreCase(this.m_empty_slot_key) == true) {
                 // note that you must edit the KEY as well as the value
