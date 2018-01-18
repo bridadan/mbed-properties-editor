@@ -240,7 +240,7 @@ public class PropertiesEditorProcessor extends PropertiesEditor implements HttpH
         
         // remove all new lines...
         if (value != null) {
-            value = value.replace("\n", "").replace("\r", "").replace("\\n","").replace("\u00A0","").replace(" ","");
+            value = value.replace("\n", "").replace("\r", "").replace("\u00A0","").replace(" ","");
             value = value.trim();
         }
         
