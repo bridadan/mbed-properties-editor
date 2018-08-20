@@ -381,10 +381,13 @@ public class PropertiesEditorProcessor extends PropertiesEditor implements HttpH
 
         // reset AWS IoT account creds 
         this.updateAWSCreds();
-
-        // then restart the bridge
-        System.out.println("Restarting Service...");
-        Utils.executeScript(this.m_scripts_root,this.m_service_restart_script);
+        
+        // see if the parameters state that we want to restart
+        if (query.containsKey("service") && query.get("service") != null && query.get("service").equalsIgnoreCase("restart") == true) {
+            // then restart!
+            System.out.println("Restarting Service...");
+            Utils.executeScript(this.m_scripts_root,this.m_service_restart_script);
+        }
 
         // initialize the response
         html = this.initializeResponse(html);
