@@ -2,5 +2,5 @@
 
 cd ${HOME}/properties-editor/scripts
 ./killPropertiesEditor.sh
-cd ..
+cd ${HOME}/properties-editor
 ./runPropertiesEditor.sh &
