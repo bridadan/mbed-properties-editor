@@ -99,6 +99,7 @@ public class PropertiesEditorProcessor extends PropertiesEditor implements HttpH
         // for now... just make this static
         this.m_key_map.put("api_key","Pelion API Key");
         this.m_key_map.put("mds_api_token","Pelion API Key");
+        this.m_key_map.put("mds_gw_address","Bridge IP Address Override");
         this.m_key_map.put("mds_enable_long_poll","Enable Bridge long Polling");
         this.m_key_map.put("api_endpoint_address","Pelion API Address");
         this.m_key_map.put("mds_address","Pelion API Address");
