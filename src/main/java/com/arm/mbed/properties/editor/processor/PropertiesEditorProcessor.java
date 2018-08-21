@@ -30,6 +30,7 @@ import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -49,12 +50,16 @@ public class PropertiesEditorProcessor extends PropertiesEditor implements HttpH
     private String m_css_file = null;
     private String m_scripts_file = null;
     
+    // Human readable key map
+    private HashMap<String,String> m_key_map = null;
+    
     /**
      * Default Constructor
      * @param extendable_config
      */
     public PropertiesEditorProcessor(boolean extendable_config) {
         super(PropertiesEditorProcessor.HTTP_VERB_DEFAULT,extendable_config);
+        this.initHumanReadableKeyMap();
         
         // pull in the CSS and scripts filenames
         this.m_css_file = this.getProperty("css_template");
@@ -86,6 +91,45 @@ public class PropertiesEditorProcessor extends PropertiesEditor implements HttpH
         // return the html
         return html;
     } 
+    
+    // initialize the human readable KeyMap
+    private void initHumanReadableKeyMap() {
+        this.m_key_map = new HashMap<String,String>();
+        
+        // for now... just make this static
+        this.m_key_map.put("api_key","Pelion API Key");
+        this.m_key_map.put("mds_enable_long_poll","Enable Bridge long Polling");
+        this.m_key_map.put("api_endpoint_address","Pelion API Endpoint URL");
+        this.m_key_map.put("iotf_api_key","Watson IoT API Key");
+        this.m_key_map.put("iotf_auth_token","Watson IoT Authentication Token");
+        this.m_key_map.put("threads_core_pool_size","Bridge Threading Pool Size");
+        this.m_key_map.put("threads_max_pool_size","Bridge Threading Max Pool Size");
+        this.m_key_map.put("threads_keep_alive_time","Bridge Thread Keep Alive (sec)");
+        this.m_key_map.put("aws_iot_region","AWS Region");
+        this.m_key_map.put("aws_iot_access_key_id","AWS Key ID");
+        this.m_key_map.put("aws_iot_secret_access_key","AWS Secret Access Key");
+        this.m_key_map.put("google_cloud_auth_json","Google Cloud Auth JSON");
+        this.m_key_map.put("google_cloud_region","Google Cloud Region");
+        this.m_key_map.put("iot_event_hub_name","Microsoft IoTHub Name");
+        this.m_key_map.put("iot_event_hub_sas_token","Microsoft IoTHub SAS Token (iothubowner)");
+        this.m_key_map.put("mqtt_address","MQTT Broker IP Address");
+        this.m_key_map.put("mqtt_port","MQTT Broker Port");
+        this.m_key_map.put("mqtt_use_ssl","MQTT Broker Using SSL");
+        this.m_key_map.put("mqtt_username","MQTT Broker Username");
+        this.m_key_map.put("mqtt_password","MQTT Broker Password");
+        this.m_key_map.put("mqtt_client_id","MQTT Broker ClientID");
+        this.m_key_map.put("mqtt_mds_topic_root","MQTT Topic Root");
+        this.m_key_map.put("mqtt_no_client_creds","MQTT Broker Using Client Creds");
+        this.m_key_map.put("mqtt_import_keystore","MQTT Broker Using Keystore");
+    }
+    
+    // map the properties key to a human readable form
+    private String mapKeyToHumanReadable(String key) {
+        if (this.m_key_map != null && this.m_key_map.containsKey(key) == true) {
+            return this.m_key_map.get(key);
+        }
+        return key;
+    }
 
     /**
      * Build out the HTML table representing the properties file 
@@ -98,17 +142,23 @@ public class PropertiesEditorProcessor extends PropertiesEditor implements HttpH
         // enumerate through the properties and fill the table
         String[] fields_to_show = this.getConfigFields(config_fields);
         for(int i=0;i<fields_to_show.length;++i) {
+            // Get the Key
             String key = fields_to_show[i];
+            
+            // Get the Value
+            String value = props.getProperty(key);     
+            
+            // Convert the Key to human readable
+            String readable_key = this.mapKeyToHumanReadable(key);
+            
             table += "<tr>";
 
-            // Key
+            // Create the Key HTML
             if (editable_key)
-                table += "<td id=\"" + key + "-key\" contenteditable=\"true\">" + key + "</td>&nbsp;&nbsp";
+                table += "<td id=\"" + key + "-key\" contenteditable=\"true\">" + readable_key + "</td>&nbsp;&nbsp";
             else
-                table += "<td id=\"" + key + "-key\" contenteditable=\"false\">" + key + "</td>&nbsp;&nbsp";
+                table += "<td id=\"" + key + "-key\" contenteditable=\"false\">" + readable_key + "</td>&nbsp;&nbsp";
 
-            // Value
-            String value = props.getProperty(key);               
             table += "<td id=\"" + key + "\" contenteditable=\"true\" align=\"left\" height=\"" + "auto" + "\" width=\"" + "auto" + "\">" + value + "</td>";
             String save_button = "<button name=\"save_button\" value=\"" + key + "\" type=\"button\" onclick=saveData('" + key + "','" + file + "') style=\"height:35px;width:80px\">SAVE</button>";
             table += "<td align=\"center\" height=\"35px\" width=\"210px\">" + save_button + "</td>";
@@ -135,17 +185,24 @@ public class PropertiesEditorProcessor extends PropertiesEditor implements HttpH
         // enumerate through the properties and fill the table
         Enumeration e = props.propertyNames();
         while (e.hasMoreElements()) {
+            // Get the Key
             String key = (String) e.nextElement();
+            
+            // Get the Value
+            String value = props.getProperty(key);     
+            
+            // Convert the Key to human readable
+            String readable_key = this.mapKeyToHumanReadable(key);
+            
             table += "<tr>";
 
             // Key
             if (editable_key)
-                table += "<td id=\"" + key + "-key\" contenteditable=\"true\">" + key + "</td>";
+                table += "<td id=\"" + key + "-key\" contenteditable=\"true\">" + readable_key + "</td>";
             else
-                table += "<td id=\"" + key + "-key\" contenteditable=\"false\">" + key + "</td>";
+                table += "<td id=\"" + key + "-key\" contenteditable=\"false\">" + readable_key + "</td>";
 
-            // Value
-            String value = props.getProperty(key);               
+            // Value          
             table += "<td id=\"" + key + "\" contenteditable=\"true\" align=\"left\" height=\"" + "auto" + "\" width=\"" + "auto" + "\">" + value + "</td>";
             String save_button = "<button name=\"save_button\" value=\"" + key + "\" type=\"button\" onclick=saveData('" + key + "','" + file + "') style=\"height:35px;width:80px\">SAVE</button>";
             table += "<td align=\"center\" height=\"35px\" width=\"210px\">" + save_button + "</td>";
