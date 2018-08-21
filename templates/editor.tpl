@@ -4,7 +4,7 @@ __TITLE__</font></p>
 <blockquote>
 <h2><b><font size="5" color="#128cab">__SERVICE_NAME__ Bridge</font></b></h2>
 <br>
-<font size="2" color="#909393">Restart __SERVICE_NAME__ Bridge</font>
+<font size="2" color="#909393">Restart __SERVICE_NAME__ Bridge Control</font>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button name="service" value="restart" onclick=restartService() style="height:35px;width:80px">RESTART</button>
 <br>
 <br>
