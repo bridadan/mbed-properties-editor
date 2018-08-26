@@ -129,6 +129,7 @@ public class PropertiesEditorProcessor extends PropertiesEditor implements HttpH
         this.m_key_map.put("mqtt_mds_topic_root","MQTT Topic Root");
         this.m_key_map.put("mqtt_no_client_creds","MQTT Broker Using Client Creds");
         this.m_key_map.put("mqtt_import_keystore","MQTT Broker Using Keystore");
+        this.m_key_map.put("mqtt_connect_retries","MQTT Connect Attempts");
     }
     
     // map the properties key to a human readable form
