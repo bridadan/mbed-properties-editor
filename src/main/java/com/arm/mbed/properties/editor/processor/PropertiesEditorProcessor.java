@@ -100,9 +100,10 @@ public class PropertiesEditorProcessor extends PropertiesEditor implements HttpH
         this.m_key_map.put("api_key","Pelion API Key");
         this.m_key_map.put("mds_api_token","Pelion API Key");
         this.m_key_map.put("mds_gw_address","Bridge (Override) IP Address");
-        this.m_key_map.put("mds_enable_long_poll","Enable Bridge long Polling");
+        this.m_key_map.put("mds_enable_long_poll","Enable Bridge Long Polling");
         this.m_key_map.put("api_endpoint_address","Pelion API Address");
         this.m_key_map.put("mds_address","Pelion API Address");
+        this.m_key_map.put("mds_max_shadow_create_threads","Pelion Max Threads in Shadow Create");
         this.m_key_map.put("mds_gw_port","Bridge Webhook Port");
         this.m_key_map.put("mds_bridge_error_level","Bridge Debug Level");
         this.m_key_map.put("mds_remove_on_deregistration","Remove Device on De-registration");
