@@ -123,6 +123,7 @@ public class PropertiesEditorProcessor extends PropertiesEditor implements HttpH
         this.m_key_map.put("iot_event_hub_sas_token","Microsoft IoTHub SAS Token (iothubowner)");
         this.m_key_map.put("iot_event_hub_device_id_prefix","IoTHub Device Prefix");
         this.m_key_map.put("iot_event_hub_enable_device_id_prefix","Enable Device Prefix");
+        this.m_key_map.put("iot_event_hub_connect_string","IoTHub Connect String");
         this.m_key_map.put("mqtt_address","MQTT Broker IP Address");
         this.m_key_map.put("mqtt_port","MQTT Broker Port");
         this.m_key_map.put("mqtt_use_ssl","MQTT Connection Using SSL");
