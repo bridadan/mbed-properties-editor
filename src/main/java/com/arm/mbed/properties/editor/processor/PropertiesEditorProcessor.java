@@ -134,6 +134,22 @@ public class PropertiesEditorProcessor extends PropertiesEditor implements HttpH
         this.m_key_map.put("mqtt_no_client_creds","MQTT Broker Using Client Creds");
         this.m_key_map.put("mqtt_import_keystore","MQTT Broker Using Keystore");
         this.m_key_map.put("mqtt_connect_retries","MQTT Connect Attempts");
+        this.m_key_map.put("heath_check_sleep_time_ms","Health Check Interval (ms)");
+        this.m_key_map.put("webhook_validator_key","Webhook Statistic Key");
+        this.m_key_map.put("webhook_validator_description","Webhook Functional Check");
+        this.m_key_map.put("webhook_validator_interval_ms","Webhook Check Interval (ms)");
+        this.m_key_map.put("database_validator_key","Database Statistic Key");
+        this.m_key_map.put("database_validator_description","Database Connection Check");
+        this.m_key_map.put("database_validator_interval_ms","Database Check Interval (ms)");
+        this.m_key_map.put("long_poll_validator_key","Long Poll Statistic Key");
+        this.m_key_map.put("long_poll_validator_description","Long Poll Functional Check");
+        this.m_key_map.put("long_poll_validator_interval_ms","Long Poll Check Interval (ms)");
+        this.m_key_map.put("mqtt_validator_key","MQTT Connections Statistic Key");
+        this.m_key_map.put("mqtt_validator_description","MQTT Connections Check");
+        this.m_key_map.put("mqtt_validator_interval_ms","MQTT Connections Check Interval (ms)");
+        this.m_key_map.put("shadow_count_validator_key","Device Shadow Count Key");
+        this.m_key_map.put("shadow_count_validator_description","Device Shadow Count");
+        this.m_key_map.put("shadow_count_validator_interval_ms","Device Shadow Count Check Interval (ms)");
     }
     
     // map the properties key to a human readable form
