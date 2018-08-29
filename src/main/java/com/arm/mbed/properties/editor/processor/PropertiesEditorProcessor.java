@@ -150,6 +150,9 @@ public class PropertiesEditorProcessor extends PropertiesEditor implements HttpH
         this.m_key_map.put("shadow_count_validator_key","Device Shadow Count Key");
         this.m_key_map.put("shadow_count_validator_description","Device Shadow Count");
         this.m_key_map.put("shadow_count_validator_interval_ms","Device Shadow Count Check Interval (ms)");
+        this.m_key_map.put("thread_count_validator_key","Thread Count Key");
+        this.m_key_map.put("thread_count_validator_description","Active Thread Count");
+        this.m_key_map.put("thread_count_validator_interval_ms","Thread Count Check Interval (ms)");
     }
     
     // map the properties key to a human readable form
