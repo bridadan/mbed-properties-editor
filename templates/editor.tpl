@@ -23,13 +23,10 @@ __TITLE__</font></p>
         </div>
 </blockquote>
 
-<blockquote>
-        <h2><b><font size="5" color="#128cab">Bridge Log</font></b></h2>
-        <textarea id="log" disabled></textarea>
-</blockquote>
 <br>
 <blockquote>
         <h2><b><font size="5" color="#128cab">Bridge Log</font></b></h2>
         <br>
-        <textarea id='log' disabled></textarea>
+        <div id='log'>
+        </div>
 </blockquote>

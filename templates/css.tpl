@@ -92,9 +92,11 @@ tbody.scrollContent tr.alternateRow td {
 
 #log {
 	width: 100%;
-	height: 500px;
-	background: #fff;
-	color: initial;
+  height: 500px;
+  overflow-y: scroll;
+  background: #eee;
+  font-family: monospace;
+  color: #000;
 }
 
 __HIDE_TABLE_1__

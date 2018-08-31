@@ -64,14 +64,17 @@ window.onload = function() {
 
   // Listen for messages
   socket.addEventListener('message', function (event) {
-    let setScroll = false;
+    var setScroll = false;
     console.log('Message from server ', event.data);
 
     if (element.scrollHeight - element.scrollTop === element.clientHeight) {
       setScroll = true;
     }
 
-    element.textContent += event.data + '\n';
+    var node = document.createElement('div');
+    var text = document.createTextNode(event.data + '\n');
+    node.appendChild(text);
+    element.appendChild(node);
 
     if (setScroll) {
       element.scrollTop = element.scrollHeight;
