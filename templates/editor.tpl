@@ -1,4 +1,4 @@
-<p><font size="6" color="#128cab"> 
+<p><font size="6" color="#128cab">
 __TITLE__</font></p>
 <br>
 <blockquote>
@@ -21,4 +21,15 @@ __TITLE__</font></p>
         <h2><b><font size="5" color="#128cab">Properties Editor Admin Settings</font></b></h2>
         __CONFIGURATOR_CONFIG_TABLE__
         </div>
+</blockquote>
+
+<blockquote>
+        <h2><b><font size="5" color="#128cab">Bridge Log</font></b></h2>
+        <textarea id="log" disabled></textarea>
+</blockquote>
+<br>
+<blockquote>
+        <h2><b><font size="5" color="#128cab">Bridge Log</font></b></h2>
+        <br>
+        <textarea id='log' disabled></textarea>
 </blockquote>

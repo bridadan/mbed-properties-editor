@@ -4,7 +4,7 @@ body {
 	color: #128cab;
 	font: normal normal 12px 'Roboto', Verdana, Geneva, Arial, Helvetica, sans-serif;
 	margin: 2px;
-        white-space: nowrap; 
+        white-space: nowrap;
 	padding: 0
 }
 
@@ -88,6 +88,13 @@ tbody.scrollContent tr.alternateRow td {
 	border-left: none;
 	border-right: none;
 	border-top: none;
+}
+
+#log {
+	width: 100%;
+	height: 500px;
+	background: #fff;
+	color: initial;
 }
 
 __HIDE_TABLE_1__

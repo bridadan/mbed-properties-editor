@@ -14,7 +14,7 @@ function addCSSClass (elem, className) {
 }
 
 function fixScrolling(elem) {
-        var objDiv = document.getElementById(elem); 
+        var objDiv = document.getElementById(elem);
         objDiv.scrollTop = objDiv.scrollHeight;
  }
 
@@ -32,7 +32,7 @@ function fixScrolling(elem) {
  }
 
 function stripedTable() {
-	if (document.getElementById && document.getElementsByTagName) {  
+	if (document.getElementById && document.getElementsByTagName) {
 		var allTables = document.getElementsByTagName('table');
 		if (!allTables) { return; }
 
@@ -52,8 +52,30 @@ function stripedTable() {
 	}
 }
 
-window.onload = function() { 
-    stripedTable(); 
-    fixScrolling("tableContainer");
+window.onload = function() {
+  console.log('connecting');
+  const socket = new WebSocket('ws://localhost:17362/logger');
+  var element = document.getElementById('log');
+
+  // Connection opened
+  socket.addEventListener('open', function (event) {
+    console.log('opened');
+  });
+
+  // Listen for messages
+  socket.addEventListener('message', function (event) {
+    let setScroll = false;
+    console.log('Message from server ', event.data);
+
+    if (element.scrollHeight - element.scrollTop === element.clientHeight) {
+      setScroll = true;
+    }
+
+    element.textContent += event.data + '\n';
+
+    if (setScroll) {
+      element.scrollTop = element.scrollHeight;
+    }
+  });
 };
 </script>
